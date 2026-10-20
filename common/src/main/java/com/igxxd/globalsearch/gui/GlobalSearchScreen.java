@@ -70,7 +70,7 @@ public class GlobalSearchScreen extends Screen {
         // 2. Left Navigator Panel Dimensions
         navX = sideMargin;
         navY = topMargin + 26;
-        navWidth = 126;
+        navWidth = 132;
         int bottomMargin = 20;
         navHeight = this.height - navY - bottomMargin;
 
@@ -86,12 +86,19 @@ public class GlobalSearchScreen extends Screen {
                 SearchResultType.KEYBIND,
                 SearchResultType.SETTING,
                 SearchResultType.ITEM,
+                SearchResultType.ENCHANTMENT,
+                SearchResultType.POTION,
+                SearchResultType.BIOME,
+                SearchResultType.DIMENSION,
                 SearchResultType.MOD
         };
 
-        int btnY = navY + 20;
         int btnWidth = navWidth - 8;
-        int btnHeight = 20;
+        int totalItems = filterTypes.length + (this.currentFilter == SearchResultType.KEYBIND ? 1 : 0);
+        int availableH = navHeight - 20;
+        int btnHeight = Math.max(16, Math.min(20, (availableH - (totalItems * 2)) / totalItems));
+        int spacing = Math.max(1, Math.min(3, (availableH - (totalItems * btnHeight)) / Math.max(1, totalItems)));
+        int btnY = navY + 18;
 
         for (SearchResultType type : filterTypes) {
             int currentY = btnY;
@@ -100,7 +107,7 @@ public class GlobalSearchScreen extends Screen {
                 this.rebuildWidgets();
             }).bounds(navX + 4, currentY, btnWidth, btnHeight).build();
             this.addRenderableWidget(btn);
-            btnY += btnHeight + 4;
+            btnY += btnHeight + spacing;
 
             // If KEYBIND filter is active, add "By Key Value" Checkbox option underneath
             if (type == SearchResultType.KEYBIND && this.currentFilter == SearchResultType.KEYBIND) {
@@ -113,7 +120,7 @@ public class GlobalSearchScreen extends Screen {
                         })
                         .build();
                 this.addRenderableWidget(keyValCheckbox);
-                btnY += 22;
+                btnY += btnHeight + spacing;
             }
         }
 

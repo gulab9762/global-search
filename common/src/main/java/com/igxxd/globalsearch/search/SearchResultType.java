@@ -5,7 +5,11 @@ public enum SearchResultType {
     KEYBIND("Keybind", "KEY", 0xFFFFAA00, 0x44FFAA00, 0xFFFFAA00),
     SETTING("Setting", "SETTING", 0xFF55FFFF, 0x4455FFFF, 0xFF55FFFF),
     ITEM("Item", "ITEM", 0xFF55FF55, 0x4455FF55, 0xFFAAAAAA),
-    MOD("Mod", "MOD", 0xFFFF77FF, 0x44FF77FF, 0xFF88AAFF);
+    ENCHANTMENT("Enchantment", "ENCHANT", 0xFFFF77FF, 0x44FF77FF, 0xFFFFAA00),
+    POTION("Potion & Effect", "POTION", 0xFFFF5555, 0x44FF5555, 0xFFFF7777),
+    BIOME("Biome", "BIOME", 0xFF55FF55, 0x4455FF55, 0xFF88FF88),
+    DIMENSION("Dimension", "DIM", 0xFFAA55FF, 0x44AA55FF, 0xFFDD88FF),
+    MOD("Mod", "MOD", 0xFF55AAFF, 0x4455AAFF, 0xFF88AAFF);
 
     private final String label;
     private final String shortLabel;

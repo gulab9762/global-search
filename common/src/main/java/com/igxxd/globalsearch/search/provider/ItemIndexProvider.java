@@ -49,6 +49,15 @@ public class ItemIndexProvider implements SearchIndexProvider {
                         desc = "Item: " + title + " (" + path + ")";
                     }
 
+                    try {
+                        String tags = item.builtInRegistryHolder().tags()
+                                .map(t -> "#" + t.location().getPath())
+                                .collect(java.util.stream.Collectors.joining(" "));
+                        if (!tags.isEmpty()) {
+                            desc += " • Tags: " + tags;
+                        }
+                    } catch (Throwable ignored) {}
+
                     results.add(new SearchResult(
                             SearchResultType.ITEM,
                             path,
