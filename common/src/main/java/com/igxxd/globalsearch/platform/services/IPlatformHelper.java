@@ -1,5 +1,7 @@
 package com.igxxd.globalsearch.platform.services;
 
+import java.util.Map;
+
 public interface IPlatformHelper {
 
     /**
@@ -32,4 +34,19 @@ public interface IPlatformHelper {
     default String getEnvironmentName() {
         return isDevelopmentEnvironment() ? "development" : "production";
     }
+
+    /**
+     * Resolves human-readable mod name for a given mod id.
+     *
+     * @param modId The mod ID.
+     * @return Display name or mod ID fallback.
+     */
+    String getModName(String modId);
+
+    /**
+     * Returns a map of all loaded mod IDs and their display names.
+     *
+     * @return Map of modId -> displayName.
+     */
+    Map<String, String> getLoadedMods();
 }

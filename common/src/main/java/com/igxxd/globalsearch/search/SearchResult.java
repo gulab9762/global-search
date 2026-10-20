@@ -1,0 +1,120 @@
+package com.igxxd.globalsearch.search;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public class SearchResult {
+
+    private final SearchResultType type;
+    private final String id;
+    private final String title;
+    private final String path;
+    private final String value;
+    private final String modId;
+    private final String modName;
+    private final ItemStack icon;
+    private final String searchTarget;
+
+    public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon) {
+        this.type = type;
+        this.id = id != null ? id : "";
+        this.title = title != null ? title : "";
+        this.path = path != null ? path : "";
+        this.value = value != null ? value : "";
+        this.modId = modId != null ? modId : "minecraft";
+        this.modName = modName != null ? modName : "Minecraft";
+        this.icon = icon != null ? icon : ItemStack.EMPTY;
+
+        // Pre-compute lower-case search target for fast substring and multi-word matching
+        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + type.name())
+                .toLowerCase(Locale.ROOT);
+    }
+
+    public SearchResultType getType() {
+        return type;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public String getModId() {
+        return modId;
+    }
+
+    public String getModName() {
+        return modName;
+    }
+
+    public ItemStack getIcon() {
+        return icon;
+    }
+
+    public boolean hasIcon() {
+        return !icon.isEmpty();
+    }
+
+    public boolean matches(String[] tokens) {
+        if (tokens.length == 0) return true;
+        for (String token : tokens) {
+            if (!searchTarget.contains(token)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public String getCopyValue() {
+        if (!value.isEmpty()) {
+            return value;
+        }
+        return id;
+    }
+
+    public List<Component> getTooltip() {
+        List<Component> tooltip = new ArrayList<>();
+        tooltip.add(Component.literal(title).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
+        tooltip.add(Component.literal("Type: ").withStyle(ChatFormatting.DARK_GRAY)
+                .append(Component.literal(type.getLabel()).withStyle(ChatFormatting.YELLOW)));
+
+        if (!value.isEmpty()) {
+            tooltip.add(Component.literal("Value: ").withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(value).withStyle(ChatFormatting.AQUA)));
+        }
+
+        if (!path.isEmpty()) {
+            tooltip.add(Component.literal("Path: ").withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(path).withStyle(ChatFormatting.GRAY)));
+        }
+
+        tooltip.add(Component.literal("Mod: ").withStyle(ChatFormatting.DARK_GRAY)
+                .append(Component.literal(modName).withStyle(ChatFormatting.BLUE))
+                .append(Component.literal(" (" + modId + ")").withStyle(ChatFormatting.DARK_GRAY)));
+
+        if (!id.isEmpty() && !id.equals(path)) {
+            tooltip.add(Component.literal("ID: ").withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(id).withStyle(ChatFormatting.DARK_AQUA)));
+        }
+
+        tooltip.add(Component.empty());
+        tooltip.add(Component.literal("Click to copy value to clipboard").withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
+        return tooltip;
+    }
+}
