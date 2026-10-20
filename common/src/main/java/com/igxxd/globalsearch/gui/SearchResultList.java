@@ -159,7 +159,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
 
             net.minecraft.resources.Identifier modTexture = result.getTextureIcon();
             if (modTexture != null) {
-                graphics.blit(modTexture, iconBoxX + 3, iconBoxY + 3, 16, 16, 0.0f, 0.0f, 1.0f, 1.0f);
+                graphics.blit(modTexture, iconBoxX + 3, iconBoxY + 3, iconBoxX + 19, iconBoxY + 19, 0.0f, 1.0f, 0.0f, 1.0f);
             } else if (result.hasIcon()) {
                 graphics.item(result.getIcon(), iconBoxX + 3, iconBoxY + 3);
             } else {
