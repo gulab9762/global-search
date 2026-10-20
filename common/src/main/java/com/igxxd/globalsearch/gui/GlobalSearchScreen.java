@@ -28,6 +28,7 @@ public class GlobalSearchScreen extends Screen {
     private SearchResultList resultList;
     private SearchResultType currentFilter = SearchResultType.ALL;
     private boolean searchByKeyValue = false;
+    private String currentSearchQuery = "";
 
     private String copiedNotification = null;
     private long notificationExpiry = 0;
@@ -56,9 +57,21 @@ public class GlobalSearchScreen extends Screen {
         int rescanBtnWidth = 64;
         int searchBoxWidth = this.width - (sideMargin * 2) - rescanBtnWidth - 6;
 
+        String prevText = this.currentSearchQuery;
+        if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
+            prevText = this.searchBox.getValue();
+        }
+        this.currentSearchQuery = prevText;
+
         this.searchBox = new EditBox(this.font, sideMargin, topMargin, searchBoxWidth, 20, Component.literal("Search"));
         this.searchBox.setHint(Component.literal("Search keybinds, settings, items, mods...").withStyle(ChatFormatting.DARK_GRAY));
-        this.searchBox.setResponder(text -> updateFilter());
+        if (!this.currentSearchQuery.isEmpty()) {
+            this.searchBox.setValue(this.currentSearchQuery);
+        }
+        this.searchBox.setResponder(text -> {
+            this.currentSearchQuery = text;
+            updateFilter();
+        });
         this.addRenderableWidget(this.searchBox);
         this.setInitialFocus(this.searchBox);
 

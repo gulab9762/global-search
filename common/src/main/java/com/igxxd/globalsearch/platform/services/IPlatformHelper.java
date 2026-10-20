@@ -49,4 +49,21 @@ public interface IPlatformHelper {
      * @return Map of modId -> displayName.
      */
     Map<String, String> getLoadedMods();
+
+    /**
+     * Resolves human-readable mod description for a given mod id.
+     *
+     * @param modId The mod ID.
+     * @return Description or empty string.
+     */
+    String getModDescription(String modId);
+
+    /**
+     * Opens an InputStream to the mod's icon or logo if available.
+     *
+     * @param modId The mod ID.
+     * @return Optional containing InputStream to the image, or empty.
+     */
+    java.util.Optional<java.io.InputStream> getModIconStream(String modId);
 }
+

@@ -53,4 +53,44 @@ public class FabricPlatformHelper implements IPlatformHelper {
         }
         return mods;
     }
+
+    @Override
+    public String getModDescription(String modId) {
+        if ("minecraft".equalsIgnoreCase(modId)) {
+            return "The base Minecraft game.";
+        }
+        return FabricLoader.getInstance().getModContainer(modId)
+                .map(container -> container.getMetadata().getDescription())
+                .orElse("");
+    }
+
+    @Override
+    public java.util.Optional<java.io.InputStream> getModIconStream(String modId) {
+        if ("minecraft".equalsIgnoreCase(modId)) {
+            return java.util.Optional.empty();
+        }
+        try {
+            var containerOpt = FabricLoader.getInstance().getModContainer(modId);
+            if (containerOpt.isPresent()) {
+                ModContainer container = containerOpt.get();
+                for (int size : new int[]{64, 128, 32, 16, 0}) {
+                    var iconPathOpt = container.getMetadata().getIconPath(size);
+                    if (iconPathOpt.isPresent()) {
+                        var pathOpt = container.findPath(iconPathOpt.get());
+                        if (pathOpt.isPresent() && java.nio.file.Files.exists(pathOpt.get())) {
+                            return java.util.Optional.of(java.nio.file.Files.newInputStream(pathOpt.get()));
+                        }
+                    }
+                }
+                for (String fallback : new String[]{"icon.png", "assets/" + modId + "/icon.png", "logo.png"}) {
+                    var pathOpt = container.findPath(fallback);
+                    if (pathOpt.isPresent() && java.nio.file.Files.exists(pathOpt.get())) {
+                        return java.util.Optional.of(java.nio.file.Files.newInputStream(pathOpt.get()));
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return java.util.Optional.empty();
+    }
 }

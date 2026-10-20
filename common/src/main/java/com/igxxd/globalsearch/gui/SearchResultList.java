@@ -87,7 +87,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
         public void toggleExpanded() {
             this.expanded = !this.expanded;
             if (this.expanded) {
-                int contentWidth = Math.max(this.getWidth() - 70, 100);
+                int contentWidth = Math.max(this.getWidth() - 48, 100);
                 int h = 38 + 6; // header + divider
 
                 // Line 1: Type & Mod
@@ -137,28 +137,36 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             int expandBtnY = y + 8;
             boolean isBtnHovered = mouseX >= expandBtnX && mouseX <= expandBtnX + expandBtnSize && mouseY >= expandBtnY && mouseY <= expandBtnY + expandBtnSize;
 
+            int iconBoxSize = 22;
+            int iconBoxX = x + 5;
+            int iconBoxY = y + 8;
+            boolean isIconHovered = mouseX >= iconBoxX && mouseX <= iconBoxX + iconBoxSize && mouseY >= iconBoxY && mouseY <= iconBoxY + iconBoxSize;
+
             // Background card with hover highlight
-            if ((isHovered && !isBtnHovered) || isFocused()) {
+            if ((isHovered && !isBtnHovered && !isIconHovered) || isFocused()) {
                 graphics.fill(x, y + 1, x + width, y + height - 1, 0x33FFFFFF);
             } else {
                 graphics.fill(x, y + 1, x + width, y + height - 1, 0x14000000);
             }
 
-            // 1. Left Type Badge (e.g. [KEY], [SETTING], [ITEM], [MOD])
+            // 1. Left Icon Slot (In-Game Sprite / Item / Mod Profile Icon)
             SearchResultType type = result.getType();
-            int badgeWidth = 46;
-            int badgeHeight = expanded ? 28 : height - 8;
-            graphics.fill(x + 4, y + 4, x + 4 + badgeWidth, y + 4 + badgeHeight, type.getBadgeBackgroundColor());
-            graphics.centeredText(font, type.getShortLabel(), x + 4 + (badgeWidth / 2), y + 4 + (badgeHeight - 8) / 2, type.getTextColor());
+            graphics.fill(iconBoxX, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, isIconHovered ? 0x44FFFFFF : 0x2E000000);
+            graphics.fill(iconBoxX, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + 1, 0x33FFFFFF);
+            graphics.fill(iconBoxX, iconBoxY + iconBoxSize - 1, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, 0x22000000);
+            graphics.fill(iconBoxX, iconBoxY, iconBoxX + 1, iconBoxY + iconBoxSize, 0x33FFFFFF);
+            graphics.fill(iconBoxX + iconBoxSize - 1, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, 0x22000000);
 
-            int curX = x + badgeWidth + 10;
-
-            // 2. Icon (for items/blocks)
-            if (result.hasIcon()) {
-                graphics.item(result.getIcon(), curX, y + 10);
-                curX += 20;
+            net.minecraft.resources.Identifier modTexture = result.getTextureIcon();
+            if (modTexture != null) {
+                graphics.blit(modTexture, iconBoxX + 3, iconBoxY + 3, 16, 16, 0.0f, 0.0f, 1.0f, 1.0f);
+            } else if (result.hasIcon()) {
+                graphics.item(result.getIcon(), iconBoxX + 3, iconBoxY + 3);
+            } else {
+                graphics.item(type.getDefaultIcon(), iconBoxX + 3, iconBoxY + 3);
             }
 
+            int curX = iconBoxX + iconBoxSize + 7;
             int availableWidth = (expandBtnX - 6) - curX;
 
             // 3. Line 1: Title + Value
@@ -247,9 +255,11 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 }
             }
 
-            // Minimal, clean on-hover tooltips (only for the expand button)
+            // Minimal, clean on-hover tooltips (for expand button and icon box)
             if (isBtnHovered) {
                 graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(expanded ? "Collapse details" : "Expand details")), mouseX, mouseY);
+            } else if (isIconHovered) {
+                graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(type.getLabel()).withStyle(ChatFormatting.GOLD)), mouseX, mouseY);
             }
         }
 

@@ -28,6 +28,11 @@ public class ModListIndexProvider implements SearchIndexProvider {
             String key = SearchResultType.MOD.name() + ":" + id.toLowerCase(Locale.ROOT);
 
             if (seenKeys.add(key)) {
+                String description = Services.PLATFORM.getModDescription(modId);
+                if (description == null || description.trim().isEmpty()) {
+                    description = "Installed Mod: " + modName + " (" + modId + ")";
+                }
+
                 results.add(new SearchResult(
                         SearchResultType.MOD,
                         id,
@@ -37,7 +42,7 @@ public class ModListIndexProvider implements SearchIndexProvider {
                         modId,
                         modName,
                         ItemStack.EMPTY,
-                        "Installed Mod: " + modName + " (" + modId + ")"
+                        description
                 ));
             }
         }

@@ -108,7 +108,20 @@ public class SearchResult {
             } catch (Throwable ignored) {
             }
         }
+        if (icon.isEmpty() && this.type == SearchResultType.MOD) {
+            if ("minecraft".equalsIgnoreCase(this.modId)) {
+                return new ItemStack(net.minecraft.world.item.Items.GRASS_BLOCK);
+            }
+            return new ItemStack(net.minecraft.world.item.Items.KNOWLEDGE_BOOK);
+        }
         return icon;
+    }
+
+    public net.minecraft.resources.Identifier getTextureIcon() {
+        if (this.type == SearchResultType.MOD) {
+            return com.igxxd.globalsearch.gui.ModIconManager.getModIcon(this.modId);
+        }
+        return null;
     }
 
     public boolean hasIcon() {

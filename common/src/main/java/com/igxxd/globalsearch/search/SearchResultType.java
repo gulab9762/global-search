@@ -44,4 +44,19 @@ public enum SearchResultType {
     public int getValueColor() {
         return valueColor;
     }
+
+    public net.minecraft.world.item.ItemStack getDefaultIcon() {
+        return switch (this) {
+            case KEYBIND -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.TRIPWIRE_HOOK);
+            case SETTING -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COMPARATOR);
+            case ITEM -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHEST);
+            case ENCHANTMENT -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ENCHANTED_BOOK);
+            case POTION -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTION);
+            case BIOME -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GRASS_BLOCK);
+            case DIMENSION -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ENDER_EYE);
+            case MOD -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.KNOWLEDGE_BOOK);
+            default -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COMPASS);
+        };
+    }
 }
+
