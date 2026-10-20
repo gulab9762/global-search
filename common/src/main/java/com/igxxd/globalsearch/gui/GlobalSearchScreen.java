@@ -3,6 +3,7 @@ package com.igxxd.globalsearch.gui;
 import com.igxxd.globalsearch.search.SearchIndexer;
 import com.igxxd.globalsearch.search.SearchResult;
 import com.igxxd.globalsearch.search.SearchResultType;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -10,7 +11,6 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +40,12 @@ public class GlobalSearchScreen extends Screen {
             this.allIndexedResults = SearchIndexer.indexAll(this.minecraft);
         }
 
-        int panelWidth = Math.min(this.width - 40, 760);
+        // Expanded panel length/width to fill almost the entire screen nicely
+        int panelWidth = Math.max(280, this.width - 28);
         int panelLeft = (this.width - panelWidth) / 2;
 
         // 1. Search Box
-        int searchBoxY = 28;
+        int searchBoxY = 26;
         this.searchBox = new EditBox(this.font, panelLeft, searchBoxY, panelWidth, 20, Component.literal("Search"));
         this.searchBox.setHint(Component.literal("Search keybinds, settings, items, mods...").withStyle(ChatFormatting.DARK_GRAY));
         this.searchBox.setResponder(text -> updateFilter());
@@ -52,8 +53,8 @@ public class GlobalSearchScreen extends Screen {
         this.setInitialFocus(this.searchBox);
 
         // 2. Filter Category Buttons
-        int buttonY = 52;
-        int btnWidth = panelWidth / 5 - 4;
+        int buttonY = 50;
+        int btnWidth = (panelWidth - 20) / 5;
         SearchResultType[] filterTypes = new SearchResultType[]{
                 SearchResultType.ALL,
                 SearchResultType.KEYBIND,
@@ -72,15 +73,15 @@ public class GlobalSearchScreen extends Screen {
             this.addRenderableWidget(btn);
         }
 
-        // 3. Result List
-        int listY = 74;
-        int listHeight = this.height - listY - 28;
+        // 3. Result List (multiline with itemHeight = 36)
+        int listY = 72;
+        int listHeight = this.height - listY - 26;
         this.resultList = new SearchResultList(
                 this.minecraft,
                 panelWidth,
                 listHeight,
                 listY,
-                24,
+                36,
                 this::copyResultValue
         );
         this.resultList.setX(panelLeft);
@@ -148,13 +149,13 @@ public class GlobalSearchScreen extends Screen {
         this.extractTransparentBackground(graphics);
 
         // Header Title
-        graphics.centeredText(this.font, Component.literal("Global Search").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), this.width / 2, 12, 0xFFFFFFFF);
+        graphics.centeredText(this.font, Component.literal("Global Search").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), this.width / 2, 10, 0xFFFFFFFF);
 
         // Render widgets (search box, filter buttons, list)
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         // Footer status / instructions
-        int footerY = this.height - 18;
+        int footerY = this.height - 16;
         if (copiedNotification != null && System.currentTimeMillis() < notificationExpiry) {
             String notification = "✓ Copied to clipboard: " + copiedNotification;
             graphics.centeredText(this.font, Component.literal(notification).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), this.width / 2, footerY, 0xFF55FF55);

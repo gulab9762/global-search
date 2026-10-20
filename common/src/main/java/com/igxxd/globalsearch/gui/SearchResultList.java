@@ -21,6 +21,11 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
         this.onSelected = onSelected;
     }
 
+    @Override
+    public int getRowWidth() {
+        return Math.max(this.width - 24, 200);
+    }
+
     public void setResults(Collection<SearchResult> results) {
         this.clearEntries();
         for (SearchResult result : results) {
@@ -57,56 +62,61 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             int width = this.getWidth();
             int height = this.getHeight();
 
-            // Background highlight on hover or focus
+            // Background card with hover highlight
             if (isHovered || isFocused()) {
-                graphics.fill(x, y, x + width, y + height, 0x33FFFFFF);
+                graphics.fill(x, y + 1, x + width, y + height - 1, 0x33FFFFFF);
             } else {
-                graphics.fill(x, y, x + width, y + height, 0x12000000);
+                graphics.fill(x, y + 1, x + width, y + height - 1, 0x14000000);
             }
 
-            // 1. Type Badge (e.g. [KEY], [SET], [ITEM], [MOD])
+            // 1. Left Type Badge (e.g. [KEY], [SETTING], [ITEM], [MOD])
             SearchResultType type = result.getType();
             int badgeWidth = 46;
-            graphics.fill(x + 2, y + 3, x + 2 + badgeWidth, y + height - 3, type.getBadgeBackgroundColor());
-            graphics.centeredText(font, type.getShortLabel(), x + 2 + (badgeWidth / 2), y + 7, type.getTextColor());
+            int badgeHeight = height - 8;
+            graphics.fill(x + 4, y + 4, x + 4 + badgeWidth, y + 4 + badgeHeight, type.getBadgeBackgroundColor());
+            graphics.centeredText(font, type.getShortLabel(), x + 4 + (badgeWidth / 2), y + (height - 8) / 2, type.getTextColor());
 
-            int curX = x + badgeWidth + 8;
+            int curX = x + badgeWidth + 10;
 
             // 2. Icon (for items/blocks)
             if (result.hasIcon()) {
                 graphics.item(result.getIcon(), curX, y + (height - 16) / 2);
-                curX += 18;
+                curX += 20;
             }
 
-            // 3. Title
-            String title = result.getTitle();
-            int maxTitleWidth = 150;
-            String trimmedTitle = font.plainSubstrByWidth(title, maxTitleWidth);
-            graphics.text(font, trimmedTitle, curX, y + 7, 0xFFFFFFFF);
-            curX += font.width(trimmedTitle) + 8;
+            int availableWidth = (x + width) - curX - 10;
 
-            // 4. Value
+            // 3. Line 1: Title + Value
+            int line1Y = y + 5;
+            String title = result.getTitle();
+            int maxTitleWidth = Math.max(availableWidth / 2, 160);
+            String displayTitle = font.plainSubstrByWidth(title, maxTitleWidth);
+            graphics.text(font, displayTitle, curX, line1Y, 0xFFFFFFFF);
+
+            int titleRenderWidth = font.width(displayTitle);
             if (!result.getValue().isEmpty()) {
                 String valStr = "[" + result.getValue() + "]";
-                int maxValWidth = 140;
-                String trimmedVal = font.plainSubstrByWidth(valStr, maxValWidth);
-                graphics.text(font, trimmedVal, curX, y + 7, type.getValueColor());
-                curX += font.width(trimmedVal) + 8;
+                int maxValWidth = availableWidth - titleRenderWidth - 12;
+                if (maxValWidth > 20) {
+                    String displayVal = font.plainSubstrByWidth(valStr, maxValWidth);
+                    graphics.text(font, displayVal, curX + titleRenderWidth + 8, line1Y, type.getValueColor());
+                }
             }
 
-            // 5. Path / Category
-            int modTagWidth = font.width(result.getModName()) + 10;
-            int rightEdge = x + width - modTagWidth - 8;
-            if (!result.getPath().isEmpty() && curX < rightEdge - 20) {
-                int availablePathWidth = rightEdge - curX - 6;
-                String trimmedPath = font.plainSubstrByWidth(result.getPath(), availablePathWidth);
-                graphics.text(font, "• " + trimmedPath, curX, y + 7, 0xFFAAAAAA);
-            }
+            // 4. Line 2: Mod Name + Path / Category
+            int line2Y = y + 19;
+            String modText = "Mod: " + result.getModName();
+            graphics.text(font, modText, curX, line2Y, 0xFF77A3FF);
+            int modRenderWidth = font.width(modText);
 
-            // 6. Mod Name Badge
-            int modX = x + width - modTagWidth - 4;
-            graphics.fill(modX, y + 4, modX + modTagWidth, y + height - 4, 0x334466FF);
-            graphics.text(font, result.getModName(), modX + 5, y + 7, 0xFF99BBFF);
+            int pathStartX = curX + modRenderWidth;
+            int pathAvailableWidth = (x + width) - pathStartX - 10;
+
+            if (!result.getPath().isEmpty() && pathAvailableWidth > 30) {
+                String pathText = " • " + result.getPath();
+                String displayPath = font.plainSubstrByWidth(pathText, pathAvailableWidth);
+                graphics.text(font, displayPath, pathStartX, line2Y, 0xFFAAAAAA);
+            }
 
             // Tooltip when hovered
             if (isHovered) {
