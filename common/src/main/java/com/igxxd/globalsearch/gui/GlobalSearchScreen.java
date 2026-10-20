@@ -7,6 +7,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -25,9 +26,16 @@ public class GlobalSearchScreen extends Screen {
     private EditBox searchBox;
     private SearchResultList resultList;
     private SearchResultType currentFilter = SearchResultType.ALL;
+    private boolean searchByKeyValue = false;
 
     private String copiedNotification = null;
     private long notificationExpiry = 0;
+
+    // Navigator panel layout bounds
+    private int navX;
+    private int navY;
+    private int navWidth;
+    private int navHeight;
 
     public GlobalSearchScreen(Screen parentScreen) {
         super(Component.literal("Global Search"));
@@ -40,30 +48,38 @@ public class GlobalSearchScreen extends Screen {
             this.allIndexedResults = SearchIndexer.getOrIndex(this.minecraft);
         }
 
-        // Expanded panel length/width to fill almost the entire screen nicely
-        int panelWidth = Math.max(280, this.width - 28);
-        int panelLeft = (this.width - panelWidth) / 2;
+        int sideMargin = 12;
+        int topMargin = 20;
 
+        // 1. Top Search Bar & Rescan Button
         int rescanBtnWidth = 64;
-        int searchBoxWidth = panelWidth - rescanBtnWidth - 6;
+        int searchBoxWidth = this.width - (sideMargin * 2) - rescanBtnWidth - 6;
 
-        // 1. Search Box
-        int searchBoxY = 26;
-        this.searchBox = new EditBox(this.font, panelLeft, searchBoxY, searchBoxWidth, 20, Component.literal("Search"));
+        this.searchBox = new EditBox(this.font, sideMargin, topMargin, searchBoxWidth, 20, Component.literal("Search"));
         this.searchBox.setHint(Component.literal("Search keybinds, settings, items, mods...").withStyle(ChatFormatting.DARK_GRAY));
         this.searchBox.setResponder(text -> updateFilter());
         this.addRenderableWidget(this.searchBox);
         this.setInitialFocus(this.searchBox);
 
-        // 1b. Rescan Button
         Button rescanBtn = Button.builder(Component.literal("↻ Rescan"), b -> triggerRescan())
-                .bounds(panelLeft + searchBoxWidth + 6, searchBoxY, rescanBtnWidth, 20)
+                .bounds(sideMargin + searchBoxWidth + 6, topMargin, rescanBtnWidth, 20)
                 .build();
         this.addRenderableWidget(rescanBtn);
 
-        // 2. Filter Category Buttons
-        int buttonY = 50;
-        int btnWidth = (panelWidth - 20) / 5;
+        // 2. Left Navigator Panel Dimensions
+        navX = sideMargin;
+        navY = topMargin + 26;
+        navWidth = 126;
+        int bottomMargin = 20;
+        navHeight = this.height - navY - bottomMargin;
+
+        // 3. Right Side Result List
+        int listX = navX + navWidth + 8;
+        int listY = navY;
+        int listWidth = this.width - listX - sideMargin;
+        int listHeight = navHeight;
+
+        // 4. Left Navigator Buttons (Vertical Stack)
         SearchResultType[] filterTypes = new SearchResultType[]{
                 SearchResultType.ALL,
                 SearchResultType.KEYBIND,
@@ -72,28 +88,44 @@ public class GlobalSearchScreen extends Screen {
                 SearchResultType.MOD
         };
 
-        for (int i = 0; i < filterTypes.length; i++) {
-            SearchResultType type = filterTypes[i];
-            int btnX = panelLeft + i * (btnWidth + 5);
+        int btnY = navY + 20;
+        int btnWidth = navWidth - 8;
+        int btnHeight = 20;
+
+        for (SearchResultType type : filterTypes) {
+            int currentY = btnY;
             Button btn = Button.builder(getFilterButtonText(type), b -> {
                 this.currentFilter = type;
                 this.rebuildWidgets();
-            }).bounds(btnX, buttonY, btnWidth, 18).build();
+            }).bounds(navX + 4, currentY, btnWidth, btnHeight).build();
             this.addRenderableWidget(btn);
+            btnY += btnHeight + 4;
+
+            // If KEYBIND filter is active, add "By Key Value" Checkbox option underneath
+            if (type == SearchResultType.KEYBIND && this.currentFilter == SearchResultType.KEYBIND) {
+                Checkbox keyValCheckbox = Checkbox.builder(Component.literal("By Key Value"), this.font)
+                        .pos(navX + 6, btnY)
+                        .selected(this.searchByKeyValue)
+                        .onValueChange((cb, val) -> {
+                            this.searchByKeyValue = val;
+                            updateFilter();
+                        })
+                        .build();
+                this.addRenderableWidget(keyValCheckbox);
+                btnY += 22;
+            }
         }
 
-        // 3. Result List (multiline with itemHeight = 36)
-        int listY = 72;
-        int listHeight = this.height - listY - 26;
+        // 5. Initialize Result List
         this.resultList = new SearchResultList(
                 this.minecraft,
-                panelWidth,
+                listWidth,
                 listHeight,
                 listY,
                 36,
                 this::copyResultValue
         );
-        this.resultList.setX(panelLeft);
+        this.resultList.setX(listX);
         this.addRenderableWidget(this.resultList);
 
         // Populate initial filtered results
@@ -103,7 +135,7 @@ public class GlobalSearchScreen extends Screen {
     private Component getFilterButtonText(SearchResultType type) {
         boolean active = this.currentFilter == type;
         ChatFormatting color = active ? ChatFormatting.YELLOW : ChatFormatting.GRAY;
-        String prefix = active ? "▶ " : "";
+        String prefix = active ? "▶ " : "  ";
         return Component.literal(prefix + type.getLabel()).withStyle(color);
     }
 
@@ -116,8 +148,16 @@ public class GlobalSearchScreen extends Screen {
             if (currentFilter != SearchResultType.ALL && result.getType() != currentFilter) {
                 continue;
             }
-            if (result.matches(tokens)) {
-                filteredResults.add(result);
+
+            // Keybind specific: search by key value if checkbox is enabled
+            if (currentFilter == SearchResultType.KEYBIND && searchByKeyValue) {
+                if (result.matchesKeyValue(tokens)) {
+                    filteredResults.add(result);
+                }
+            } else {
+                if (result.matches(tokens)) {
+                    filteredResults.add(result);
+                }
             }
         }
 
@@ -168,20 +208,33 @@ public class GlobalSearchScreen extends Screen {
         this.extractTransparentBackground(graphics);
 
         // Header Title
-        graphics.centeredText(this.font, Component.literal("Global Search").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), this.width / 2, 10, 0xFFFFFFFF);
+        graphics.centeredText(this.font, Component.literal("Global Search").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), this.width / 2, 7, 0xFFFFFFFF);
 
-        // Render widgets (search box, filter buttons, list)
+        // Left Navigation Card Background & Border
+        graphics.fill(navX, navY, navX + navWidth, navY + navHeight, 0x44000000);
+        graphics.fill(navX, navY, navX + navWidth, navY + 1, 0x33FFFFFF);
+        graphics.fill(navX + navWidth - 1, navY, navX + navWidth, navY + navHeight, 0x22FFFFFF);
+
+        // Navigator Header Label
+        graphics.text(this.font, Component.literal("FILTERS").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.BOLD), navX + 8, navY + 6, 0xFFAAAAAA);
+
+        // Render widgets (search box, rescan button, filter buttons, checkbox, result list)
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         // Footer status / instructions
-        int footerY = this.height - 16;
+        int footerY = this.height - 14;
         if (copiedNotification != null && System.currentTimeMillis() < notificationExpiry) {
             String notification = "✓ Copied to clipboard: " + copiedNotification;
-            graphics.centeredText(this.font, Component.literal(notification).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), this.width / 2, footerY, 0xFF55FF55);
+            graphics.centeredText(this.font, Component.literal(notification).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), this.width / 2, footerY, 0xFFFFFFFF);
         } else {
-            String countText = String.format("Showing %d of %d results • Press Enter or Click to copy • Esc to close", filteredResults.size(), allIndexedResults.size());
-            graphics.centeredText(this.font, Component.literal(countText).withStyle(ChatFormatting.DARK_GRAY), this.width / 2, footerY, 0xFFAAAAAA);
+            String stats = "Showing " + filteredResults.size() + " of " + allIndexedResults.size() + " results • Press Enter or Click to copy • Esc to close";
+            graphics.centeredText(this.font, Component.literal(stats).withStyle(ChatFormatting.GRAY), this.width / 2, footerY, 0xFFFFFFFF);
         }
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 
     @Override

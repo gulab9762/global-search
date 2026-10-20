@@ -23,7 +23,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
 
     @Override
     public int getRowWidth() {
-        return Math.max(this.width - 24, 200);
+        return Math.max(this.width - 16, 180);
     }
 
     public void setResults(Collection<SearchResult> results) {

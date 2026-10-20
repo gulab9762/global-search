@@ -72,6 +72,12 @@ public class SearchIndexer {
         }
 
         try {
+            indexXaeroMods(results, seenKeys);
+        } catch (Exception e) {
+            Constants.LOG.error("Failed to index Xaero Minimap/WorldMap configs", e);
+        }
+
+        try {
             indexClothConfig(results, seenKeys);
         } catch (Exception e) {
             Constants.LOG.debug("Cloth config scanner finished with message", e);
@@ -117,7 +123,10 @@ public class SearchIndexer {
             }
 
             String modName = Services.PLATFORM.getModName(modId);
-            String path = "Controls > " + category;
+            String path = "minecraft".equals(modId)
+                    ? "Options > Controls > " + category
+                    : modName + " > Controls > " + category;
+
             String key = SearchResultType.KEYBIND.name() + ":" + translationKey.toLowerCase(Locale.ROOT);
 
             if (seenKeys.add(key)) {
@@ -130,7 +139,7 @@ public class SearchIndexer {
                         modId,
                         modName,
                         ItemStack.EMPTY,
-                        "Keybind: " + title
+                        "Keybind for " + title
                 ));
             }
         }
@@ -140,31 +149,31 @@ public class SearchIndexer {
         Options options = minecraft.options;
         if (options == null) return;
 
-        // Core known options
-        addSetting(results, seenKeys, "Field of View (FOV)", "Options > Video", String.valueOf(options.fov().get()));
-        addSetting(results, seenKeys, "Brightness", "Options > Video", String.format(Locale.ROOT, "%.0f%%", options.gamma().get() * 100));
-        addSetting(results, seenKeys, "Render Distance", "Options > Video", options.getEffectiveRenderDistance() + " chunks");
-        addSetting(results, seenKeys, "Simulation Distance", "Options > Video", options.simulationDistance().get() + " chunks");
-        addSetting(results, seenKeys, "GUI Scale", "Options > Video", options.guiScale().get() == 0 ? "Auto" : String.valueOf(options.guiScale().get()));
-        addSetting(results, seenKeys, "Max Framerate", "Options > Video", options.framerateLimit().get() >= 260 ? "Unlimited" : options.framerateLimit().get() + " fps");
-        addSetting(results, seenKeys, "VSync", "Options > Video", options.enableVsync().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Fullscreen", "Options > Video", options.fullscreen().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "View Bobbing", "Options > Video", options.bobView().get() ? "ON" : "OFF");
+        // Core known options with exact end-to-end paths
+        addSetting(results, seenKeys, "Field of View (FOV)", "Options > Video Settings", String.valueOf(options.fov().get()));
+        addSetting(results, seenKeys, "Brightness", "Options > Video Settings", String.format(Locale.ROOT, "%.0f%%", options.gamma().get() * 100));
+        addSetting(results, seenKeys, "Render Distance", "Options > Video Settings", options.getEffectiveRenderDistance() + " chunks");
+        addSetting(results, seenKeys, "Simulation Distance", "Options > Video Settings", options.simulationDistance().get() + " chunks");
+        addSetting(results, seenKeys, "GUI Scale", "Options > Video Settings", options.guiScale().get() == 0 ? "Auto" : String.valueOf(options.guiScale().get()));
+        addSetting(results, seenKeys, "Max Framerate", "Options > Video Settings", options.framerateLimit().get() >= 260 ? "Unlimited" : options.framerateLimit().get() + " fps");
+        addSetting(results, seenKeys, "VSync", "Options > Video Settings", options.enableVsync().get() ? "ON" : "OFF");
+        addSetting(results, seenKeys, "Fullscreen", "Options > Video Settings", options.fullscreen().get() ? "ON" : "OFF");
+        addSetting(results, seenKeys, "View Bobbing", "Options > Video Settings", options.bobView().get() ? "ON" : "OFF");
         addSetting(results, seenKeys, "Auto-Jump", "Options > Controls", options.autoJump().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Mouse Sensitivity", "Options > Controls", String.format(Locale.ROOT, "%.0f%%", options.sensitivity().get() * 100));
-        addSetting(results, seenKeys, "Invert Mouse", "Options > Controls", options.invertMouseY().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Particles", "Options > Video", String.valueOf(options.particles().get()));
-        addSetting(results, seenKeys, "High Contrast", "Options > Accessibility", options.highContrast().get() ? "ON" : "OFF");
+        addSetting(results, seenKeys, "Mouse Sensitivity", "Options > Controls > Mouse Settings", String.format(Locale.ROOT, "%.0f%%", options.sensitivity().get() * 100));
+        addSetting(results, seenKeys, "Invert Mouse", "Options > Controls > Mouse Settings", options.invertMouseY().get() ? "ON" : "OFF");
+        addSetting(results, seenKeys, "Particles", "Options > Video Settings", String.valueOf(options.particles().get()));
+        addSetting(results, seenKeys, "High Contrast", "Options > Accessibility Settings", options.highContrast().get() ? "ON" : "OFF");
         addSetting(results, seenKeys, "Show Subtitles", "Options > Music & Sounds", options.showSubtitles().get() ? "ON" : "OFF");
 
-        // Sound sources
+        // Sound sources with full path
         for (SoundSource source : SoundSource.values()) {
             String name = formatCamelCase(source.getName()) + " Volume";
             String value = String.format(Locale.ROOT, "%.0f%%", options.getSoundSourceVolume(source) * 100);
             addSetting(results, seenKeys, name, "Options > Music & Sounds", value);
         }
 
-        // Introspect other OptionInstance methods
+        // Introspect other OptionInstance methods and assign true end-to-end paths
         for (Method method : Options.class.getMethods()) {
             if (OptionInstance.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0) {
                 try {
@@ -172,12 +181,51 @@ public class SearchIndexer {
                     String readableName = formatCamelCase(methodName);
                     OptionInstance<?> instance = (OptionInstance<?>) method.invoke(options);
                     if (instance != null && instance.get() != null) {
-                        addSetting(results, seenKeys, readableName, "Options > General", String.valueOf(instance.get()));
+                        String path = getVanillaOptionPath(methodName);
+                        addSetting(results, seenKeys, readableName, path, String.valueOf(instance.get()));
                     }
                 } catch (Exception ignored) {
                 }
             }
         }
+    }
+
+    private static String getVanillaOptionPath(String methodName) {
+        String n = methodName.toLowerCase(Locale.ROOT);
+        if (n.equals("fov") || n.equals("gamma") || n.contains("guiscale") || n.contains("framerate") ||
+                n.contains("vsync") || n.contains("fullscreen") || n.contains("bobview") || n.contains("particle") ||
+                n.contains("cloud") || n.contains("render") || n.contains("simulation") || n.contains("chunk") ||
+                n.contains("mipmap") || n.contains("texture") || n.contains("ambientocclusion") || n.contains("leaves") ||
+                n.contains("vignette") || n.contains("transparency") || n.contains("attackindicator") ||
+                n.contains("autosave") || n.contains("graphics") || n.contains("weather") || n.contains("blurriness") ||
+                n.contains("panorama")) {
+            return "Options > Video Settings";
+        }
+        if (n.contains("sensitivity") || n.contains("mouse") || n.contains("cursor")) {
+            return "Options > Controls > Mouse Settings";
+        }
+        if (n.contains("crouch") || n.contains("sprint") || n.contains("autojump") || n.contains("operatoritems") ||
+                n.contains("toggle") || n.contains("mainhand") || n.contains("minecart")) {
+            return "Options > Controls";
+        }
+        if (n.contains("chat") || n.contains("suggest")) {
+            return "Options > Chat Settings";
+        }
+        if (n.contains("sound") || n.contains("volume") || n.contains("audio") || n.contains("subtitles") ||
+                n.contains("music") || n.contains("device")) {
+            return "Options > Music & Sounds";
+        }
+        if (n.contains("contrast") || n.contains("narrator") || n.contains("effectscale") || n.contains("glint") ||
+                n.contains("damagetilt") || n.contains("notificationdisplay") || n.contains("darkness")) {
+            return "Options > Accessibility Settings";
+        }
+        if (n.contains("font") || n.contains("glyph") || n.contains("language")) {
+            return "Options > Language";
+        }
+        if (n.contains("telemetry")) {
+            return "Options > Telemetry";
+        }
+        return "Options > Miscellaneous";
     }
 
     private static void addSetting(List<SearchResult> results, Set<String> seenKeys, String title, String path, String value) {
@@ -193,7 +241,7 @@ public class SearchIndexer {
                     "minecraft",
                     "Minecraft",
                     ItemStack.EMPTY,
-                    "Setting: " + title
+                    "Vanilla Setting (" + path + ")"
             ));
         }
     }
@@ -249,6 +297,135 @@ public class SearchIndexer {
                 ));
             }
         }
+    }
+
+    /**
+     * Deep scanner for Xaero's Minimap and Xaero's WorldMap configurations.
+     */
+    private static void indexXaeroMods(List<SearchResult> results, Set<String> seenKeys) {
+        // 1. Xaero's Minimap
+        indexXaeroConfigClass("xaero.hud.minimap.common.config.option.MinimapProfiledConfigOptions", "xaerominimap", "Xaero's Minimap", "Minimap Settings", results, seenKeys);
+        indexXaeroConfigClass("xaero.hud.minimap.config.primary.option.MinimapPrimaryClientConfigOptions", "xaerominimap", "Xaero's Minimap", "Minimap Settings", results, seenKeys);
+        indexXaeroConfigClass("xaero.hud.minimap.common.config.primary.option.MinimapPrimaryCommonConfigOptions", "xaerominimap", "Xaero's Minimap", "Minimap Settings", results, seenKeys);
+
+        // 2. Xaero's World Map
+        indexXaeroConfigClass("xaero.map.common.config.option.WorldMapProfiledConfigOptions", "xaeroworldmap", "Xaero's World Map", "World Map Settings", results, seenKeys);
+        indexXaeroConfigClass("xaero.map.config.primary.option.WorldMapPrimaryClientConfigOptions", "xaeroworldmap", "Xaero's World Map", "World Map Settings", results, seenKeys);
+        indexXaeroConfigClass("xaero.map.common.config.primary.option.WorldMapPrimaryCommonConfigOptions", "xaeroworldmap", "Xaero's World Map", "World Map Settings", results, seenKeys);
+    }
+
+    private static void indexXaeroConfigClass(String className, String modId, String modName, String baseMenu, List<SearchResult> results, Set<String> seenKeys) {
+        try {
+            Class<?> cls = Class.forName(className);
+            for (Field field : cls.getFields()) {
+                if (!Modifier.isStatic(field.getModifiers())) continue;
+
+                Object optionObj = field.get(null);
+                if (optionObj == null) continue;
+
+                try {
+                    Method getIdM = optionObj.getClass().getMethod("getId");
+                    String id = (String) getIdM.invoke(optionObj);
+
+                    String title = formatCamelCase(field.getName());
+                    try {
+                        Method getDisplayNameM = optionObj.getClass().getMethod("getDisplayName");
+                        Component comp = (Component) getDisplayNameM.invoke(optionObj);
+                        if (comp != null && !comp.getString().isEmpty()) {
+                            title = comp.getString();
+                        }
+                    } catch (Throwable ignored) {}
+
+                    String tooltip = "";
+                    try {
+                        Method getTooltipM = optionObj.getClass().getMethod("getTooltip");
+                        Component tComp = (Component) getTooltipM.invoke(optionObj);
+                        if (tComp != null) {
+                            tooltip = tComp.getString();
+                        }
+                    } catch (Throwable ignored) {}
+
+                    String val = "";
+                    try {
+                        Method getDefaultValueM = optionObj.getClass().getMethod("getDefaultValue");
+                        Object defVal = getDefaultValueM.invoke(optionObj);
+                        if (defVal != null) {
+                            val = String.valueOf(defVal);
+                        }
+                    } catch (Throwable ignored) {}
+
+                    String subCategory = getXaeroSubcategory(field.getName());
+                    String fullPath = modName + " > " + baseMenu + " > " + subCategory;
+                    String uniqueKey = SearchResultType.SETTING.name() + ":" + modId + ":" + id.toLowerCase(Locale.ROOT);
+
+                    if (seenKeys.add(uniqueKey)) {
+                        results.add(new SearchResult(
+                                SearchResultType.SETTING,
+                                modId + ":setting:" + id,
+                                title,
+                                fullPath,
+                                val,
+                                modId,
+                                modName,
+                                ItemStack.EMPTY,
+                                tooltip.isEmpty() ? (title + " (" + fullPath + ")") : tooltip
+                        ));
+                    }
+                } catch (Throwable ignored) {}
+            }
+        } catch (ClassNotFoundException ignored) {
+        } catch (Throwable t) {
+            Constants.LOG.debug("Could not scan Xaero config class " + className, t);
+        }
+    }
+
+    private static String getXaeroSubcategory(String fieldName) {
+        if (fieldName == null) return "General";
+        String u = fieldName.toUpperCase(Locale.ROOT);
+
+        // View Settings (End-to-End full path for Lock Minimap North)
+        if (u.equals("NORTH_LOCKED") || u.equals("SIZE") || u.equals("SHAPE") || u.equals("LIGHTING") ||
+                u.equals("ZOOM") || u.equals("CAVE_ZOOM") || u.equals("FURTHER_ZOOMOUT") || u.equals("ZOOM_ENLARGED") ||
+                u.equals("OPACITY") || u.equals("UNDISCOVERED_OPACITY") || u.equals("FRAME") || u.equals("FRAME_COLOR") ||
+                u.equals("CENTERED_ENLARGED") || u.equals("KEEP_ENLARGED_UNLOCKED") || u.equals("TOGGLED_ENLARGED") ||
+                u.equals("HIDE_UNDER_SCREEN") || u.equals("BOSS_HEALTH_PUSH_BOX") || u.equals("HIDE_UNDER_F3") ||
+                u.equals("POTION_EFFECT_PUSH_BOX")) {
+            return "View Settings";
+        }
+
+        // Block Map Settings
+        if (u.contains("BLOCK") || u.contains("BIOME") || u.contains("CAVE") || u.contains("TERRAIN") ||
+                u.contains("REDSTONE") || u.contains("FLOWERS") || u.contains("GLASS") || u.contains("ANTI_ALIASING") ||
+                u.contains("WORLD_MAP_CHUNKS") || u.contains("HEIGHT_FOR_SHORT")) {
+            return "Block Map Settings";
+        }
+
+        // Overlays Settings
+        if (u.contains("CHUNK_GRID") || u.contains("SLIME") || u.contains("LIGHT_OVERLAY") || u.contains("OPAC_CLAIMS")) {
+            return "Overlays Settings";
+        }
+
+        // Waypoint Settings
+        if (u.contains("WAYPOINT") || u.contains("DEATHPOINT") || u.contains("COMPASS") || u.contains("TELEPORT")) {
+            return "Waypoint Settings";
+        }
+
+        // Info Display Settings
+        if (u.contains("INFO_DISPLAY") || u.contains("CLAIM")) {
+            return "Info Display Settings";
+        }
+
+        // Entity Radar Settings
+        if (u.contains("RADAR") || u.contains("ENTITY")) {
+            return "Entity Radar Settings";
+        }
+
+        // Misc Settings
+        if (u.equals("SAFE_MODE") || u.equals("UPDATE_NOTIFICATIONS") || u.equals("UI_SCALE") || u.equals("MINIMAP_ITEM") || u.equals("RENDER_LAYER")) {
+            return "Misc Settings";
+        }
+
+        return "General Settings";
     }
 
     /**
@@ -334,7 +511,7 @@ public class SearchIndexer {
                                                     Method getConfigM = wrapper.getClass().getMethod("getConfig");
                                                     Object config = getConfigM.invoke(wrapper);
                                                     if (config != null) {
-                                                        addMalilibConfig(config, modId, modName, "Configs", results, seenKeys);
+                                                        addMalilibConfig(config, modId, modName, "General Settings", results, seenKeys);
                                                     }
                                                 } catch (Throwable ignored) {}
                                             }
@@ -366,22 +543,22 @@ public class SearchIndexer {
             List<?> hotkeys = (List<?>) hotkeyListF.get(null);
             if (hotkeys != null) {
                 for (Object hk : hotkeys) {
-                    addMalilibHotkey(hk, modId, modName, "Hotkeys", results, seenKeys);
+                    addMalilibHotkey(hk, modId, modName, "Hotkeys Settings", results, seenKeys);
                 }
             }
         } catch (Throwable ignored) {}
 
-        // Scan Litematica Configs inner classes
-        String[] configClasses = new String[]{
-                "fi.dy.masa.litematica.config.Configs$Generic",
-                "fi.dy.masa.litematica.config.Configs$Visuals",
-                "fi.dy.masa.litematica.config.Configs$InfoOverlays",
-                "fi.dy.masa.litematica.config.Configs$Colors"
-        };
-        for (String clsName : configClasses) {
+        // Scan Litematica Configs inner classes with specific tab hierarchy
+        Map<String, String> configClassMap = new LinkedHashMap<>();
+        configClassMap.put("fi.dy.masa.litematica.config.Configs$Generic", "Generic Settings");
+        configClassMap.put("fi.dy.masa.litematica.config.Configs$Visuals", "Visuals Settings");
+        configClassMap.put("fi.dy.masa.litematica.config.Configs$InfoOverlays", "Info Overlays Settings");
+        configClassMap.put("fi.dy.masa.litematica.config.Configs$Colors", "Colors Settings");
+
+        for (Map.Entry<String, String> entry : configClassMap.entrySet()) {
             try {
-                Class<?> cls = Class.forName(clsName);
-                String category = cls.getSimpleName().replace("Configs$", "").replace("$", " > ");
+                Class<?> cls = Class.forName(entry.getKey());
+                String category = entry.getValue();
                 Field optionsF = cls.getField("OPTIONS");
                 List<?> options = (List<?>) optionsF.get(null);
                 if (options != null) {
@@ -417,9 +594,12 @@ public class SearchIndexer {
             } catch (Throwable ignored) {}
 
             String title = formatCamelCase(name);
+            String path = modName + " > " + category;
+
             // Enhanced alias matching for Litematica's Area Editor setting
             if (name.equalsIgnoreCase("openGuiAreaSettings")) {
                 title = "Area Editor / Area Settings GUI";
+                path = modName + " > Hotkeys Settings > Area Editor";
                 if (comment.isEmpty()) {
                     comment = "Open the Area Settings / Area Editor GUI for the currently selected area";
                 } else if (!comment.toLowerCase(Locale.ROOT).contains("area editor")) {
@@ -427,7 +607,6 @@ public class SearchIndexer {
                 }
             }
 
-            String path = modName + " > " + category;
             String id = modId + ":hotkey:" + name;
 
             results.add(new SearchResult(
@@ -484,8 +663,11 @@ public class SearchIndexer {
             if (!seenKeys.add(key)) return;
 
             String title = formatCamelCase(name);
+            String path = modName + " > " + category;
+
             if (name.equalsIgnoreCase("openGuiAreaSettings")) {
                 title = "Area Editor / Area Settings GUI";
+                path = modName + " > Hotkeys Settings > Area Editor";
                 if (comment.isEmpty()) {
                     comment = "Open the Area Settings / Area Editor GUI for the currently selected area";
                 } else if (!comment.toLowerCase(Locale.ROOT).contains("area editor")) {
@@ -493,7 +675,6 @@ public class SearchIndexer {
                 }
             }
 
-            String path = modName + " > " + category;
             String id = modId + ":config:" + name;
 
             results.add(new SearchResult(

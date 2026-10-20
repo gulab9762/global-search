@@ -87,6 +87,17 @@ public class SearchResult {
         return true;
     }
 
+    public boolean matchesKeyValue(String[] tokens) {
+        if (tokens.length == 0) return true;
+        String valLower = this.value.toLowerCase(Locale.ROOT);
+        for (String token : tokens) {
+            if (!valLower.contains(token)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public String getCopyValue() {
         if (!value.isEmpty()) {
             return value;
