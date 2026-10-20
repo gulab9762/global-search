@@ -17,15 +17,25 @@ public class SearchResult {
     private final String value;
     private final String modId;
     private final String modName;
-    private final ItemStack icon;
-    private final String description;
+    private final ItemStack initialIcon;
+    private final net.minecraft.world.item.Item item;
+    private ItemStack icon;
+    private String description;
     private final String searchTarget;
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon) {
-        this(type, id, title, path, value, modId, modName, icon, "");
+        this(type, id, title, path, value, modId, modName, icon, null, "");
+    }
+
+    public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, net.minecraft.world.item.Item item, String description) {
+        this(type, id, title, path, value, modId, modName, ItemStack.EMPTY, item, description);
     }
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, String description) {
+        this(type, id, title, path, value, modId, modName, icon, null, description);
+    }
+
+    public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, net.minecraft.world.item.Item item, String description) {
         this.type = type;
         this.id = id != null ? id : "";
         this.title = title != null ? title : "";
@@ -33,8 +43,19 @@ public class SearchResult {
         this.value = value != null ? value : "";
         this.modId = modId != null ? modId : "minecraft";
         this.modName = modName != null ? modName : "Minecraft";
-        this.icon = icon != null ? icon : ItemStack.EMPTY;
-        this.description = description != null ? description : "";
+        this.initialIcon = icon != null ? icon : ItemStack.EMPTY;
+        this.icon = this.initialIcon;
+        this.item = item;
+        
+        String desc = description != null ? description.trim() : "";
+        if (desc.isEmpty()) {
+            if (!this.path.isEmpty()) {
+                desc = this.title + " (" + this.path + ")";
+            } else {
+                desc = this.title + " (" + this.id + ")";
+            }
+        }
+        this.description = desc;
 
         // Pre-compute lower-case search target for fast substring and multi-word matching
         this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + this.description + " " + type.name())
@@ -70,11 +91,17 @@ public class SearchResult {
     }
 
     public ItemStack getIcon() {
+        if (icon.isEmpty() && item != null) {
+            try {
+                this.icon = new ItemStack(item);
+            } catch (Throwable ignored) {
+            }
+        }
         return icon;
     }
 
     public boolean hasIcon() {
-        return !icon.isEmpty();
+        return !getIcon().isEmpty();
     }
 
     public boolean matches(String[] tokens) {

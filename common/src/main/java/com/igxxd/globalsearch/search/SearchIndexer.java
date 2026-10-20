@@ -248,29 +248,32 @@ public class SearchIndexer {
 
     private static void indexItems(List<SearchResult> results, Set<String> seenKeys) {
         for (Item item : BuiltInRegistries.ITEM) {
-            Identifier id = BuiltInRegistries.ITEM.getKey(item);
-            if (id == null) continue;
+            try {
+                Identifier id = BuiltInRegistries.ITEM.getKey(item);
+                if (id == null) continue;
 
-            ItemStack stack = new ItemStack(item);
-            String title = stack.getHoverName().getString();
-            String modId = id.getNamespace();
-            String modName = Services.PLATFORM.getModName(modId);
-            String value = "Max: " + stack.getMaxStackSize();
-            String path = id.toString();
-            String key = SearchResultType.ITEM.name() + ":" + path.toLowerCase(Locale.ROOT);
+                String descId = item.getDescriptionId();
+                String title = Component.translatable(descId).getString();
+                String modId = id.getNamespace();
+                String modName = Services.PLATFORM.getModName(modId);
+                String value = "Max: " + item.getDefaultMaxStackSize();
+                String path = id.toString();
+                String key = SearchResultType.ITEM.name() + ":" + path.toLowerCase(Locale.ROOT);
 
-            if (seenKeys.add(key)) {
-                results.add(new SearchResult(
-                        SearchResultType.ITEM,
-                        path,
-                        title,
-                        path,
-                        value,
-                        modId,
-                        modName,
-                        stack,
-                        "Item: " + title + " (" + path + ")"
-                ));
+                if (seenKeys.add(key)) {
+                    results.add(new SearchResult(
+                            SearchResultType.ITEM,
+                            path,
+                            title,
+                            path,
+                            value,
+                            modId,
+                            modName,
+                            item,
+                            "Item: " + title + " (" + path + ")"
+                    ));
+                }
+            } catch (Throwable ignored) {
             }
         }
     }

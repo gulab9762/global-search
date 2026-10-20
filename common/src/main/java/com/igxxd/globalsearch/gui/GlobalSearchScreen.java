@@ -122,7 +122,7 @@ public class GlobalSearchScreen extends Screen {
                 listWidth,
                 listHeight,
                 listY,
-                36,
+                38,
                 this::copyResultValue
         );
         this.resultList.setX(listX);

@@ -38,7 +38,18 @@ public class FabricPlatformHelper implements IPlatformHelper {
     public Map<String, String> getLoadedMods() {
         Map<String, String> mods = new HashMap<>();
         for (ModContainer container : FabricLoader.getInstance().getAllMods()) {
-            mods.put(container.getMetadata().getId(), container.getMetadata().getName());
+            String id = container.getMetadata().getId();
+            // Hide internal Fabric API submodules
+            if (container.getContainingMod().isPresent()) {
+                continue;
+            }
+            if (container.getMetadata().containsCustomValue("fabric-api:module-lifecycle")) {
+                continue;
+            }
+            if (id.startsWith("fabric-") && !id.equals("fabric-api")) {
+                continue;
+            }
+            mods.put(id, container.getMetadata().getName());
         }
         return mods;
     }
