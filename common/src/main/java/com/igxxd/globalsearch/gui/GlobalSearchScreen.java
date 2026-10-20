@@ -378,7 +378,7 @@ public class GlobalSearchScreen extends Screen {
                     : "✓ Copied to clipboard: " + copiedNotification;
             graphics.centeredText(this.font, Component.literal(notification).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), this.width / 2, footerY, 0xFFFFFFFF);
         } else {
-            String stats = "Showing " + filteredResults.size() + " of " + allIndexedResults.size() + " results • Click [Edit] to modify • Enter/Click to copy • Esc to close";
+            String stats = "Showing " + filteredResults.size() + " of " + allIndexedResults.size() + " results • Click [Edit] to modify • Esc to close";
             graphics.centeredText(this.font, Component.literal(stats).withStyle(ChatFormatting.GRAY), this.width / 2, footerY, 0xFFFFFFFF);
         }
     }

@@ -366,19 +366,22 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 return true;
             }
 
-            // 2. Directly change setting / keybind on click!
+            // 2. On click [Edit] only, do edit!
             if (result.isEditable()) {
-                if (onEdit != null) {
-                    onEdit.accept(result);
-                    return true;
+                int editBtnW = 30;
+                int editBtnH = 18;
+                int editBtnX = expandBtnX - editBtnW - 4;
+                int editBtnY = this.getY() + 8;
+
+                if (mx >= editBtnX && mx <= editBtnX + editBtnW && my >= editBtnY && my <= editBtnY + editBtnH) {
+                    if (onEdit != null) {
+                        onEdit.accept(result);
+                        return true;
+                    }
                 }
             }
 
-            // 3. Otherwise (items, enchantments, mods, biomes), copy value to clipboard
-            if (onSelected != null) {
-                onSelected.accept(result);
-                return true;
-            }
+            // 3. Clicking result item row does nothing
             return false;
         }
     }
