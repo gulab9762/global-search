@@ -331,11 +331,17 @@ public class SearchIndexer {
                     String id = (String) getIdM.invoke(optionObj);
 
                     String title = formatCamelCase(field.getName());
+                    String transKey = null;
                     try {
                         Method getDisplayNameM = optionObj.getClass().getMethod("getDisplayName");
                         Component comp = (Component) getDisplayNameM.invoke(optionObj);
-                        if (comp != null && !comp.getString().isEmpty()) {
-                            title = comp.getString();
+                        if (comp != null) {
+                            if (!comp.getString().isEmpty()) {
+                                title = comp.getString();
+                            }
+                            if (comp.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc) {
+                                transKey = tc.getKey();
+                            }
                         }
                     } catch (Throwable ignored) {}
 
@@ -357,8 +363,8 @@ public class SearchIndexer {
                         }
                     } catch (Throwable ignored) {}
 
-                    String subCategory = getXaeroSubcategory(field.getName());
-                    String fullPath = modName + " > " + baseMenu + " > " + subCategory;
+                    String subCategory = decodeXaeroCategory(id, field.getName(), transKey);
+                    String fullPath = subCategory.isEmpty() ? (modName + " > " + baseMenu) : (modName + " > " + baseMenu + " > " + subCategory);
                     String uniqueKey = SearchResultType.SETTING.name() + ":" + modId + ":" + id.toLowerCase(Locale.ROOT);
 
                     if (seenKeys.add(uniqueKey)) {
@@ -382,57 +388,35 @@ public class SearchIndexer {
         }
     }
 
-    private static String getXaeroSubcategory(String fieldName) {
-        if (fieldName == null) return "General";
-        String u = fieldName.toUpperCase(Locale.ROOT);
+    private static String decodeXaeroCategory(String optionId, String fieldName, String transKey) {
+        String token = (optionId + "_" + (fieldName != null ? fieldName : "") + "_" + (transKey != null ? transKey : "")).toLowerCase(Locale.ROOT);
 
-        // View Settings (End-to-End full path for Lock Minimap North)
-        if (u.equals("NORTH_LOCKED") || u.equals("SIZE") || u.equals("SHAPE") || u.equals("LIGHTING") ||
-                u.equals("ZOOM") || u.equals("CAVE_ZOOM") || u.equals("FURTHER_ZOOMOUT") || u.equals("ZOOM_ENLARGED") ||
-                u.equals("OPACITY") || u.equals("UNDISCOVERED_OPACITY") || u.equals("FRAME") || u.equals("FRAME_COLOR") ||
-                u.equals("CENTERED_ENLARGED") || u.equals("KEEP_ENLARGED_UNLOCKED") || u.equals("TOGGLED_ENLARGED") ||
-                u.equals("HIDE_UNDER_SCREEN") || u.equals("BOSS_HEALTH_PUSH_BOX") || u.equals("HIDE_UNDER_F3") ||
-                u.equals("POTION_EFFECT_PUSH_BOX")) {
-            return "View Settings";
+        // Dynamically resolve category names from official localized translation keys
+        if (token.contains("block") || token.contains("biome") || token.contains("cave") || token.contains("terrain")) {
+            return Component.translatable("gui.xaero_minimap_block_map_settings").getString();
         }
-
-        // Block Map Settings
-        if (u.contains("BLOCK") || u.contains("BIOME") || u.contains("CAVE") || u.contains("TERRAIN") ||
-                u.contains("REDSTONE") || u.contains("FLOWERS") || u.contains("GLASS") || u.contains("ANTI_ALIASING") ||
-                u.contains("WORLD_MAP_CHUNKS") || u.contains("HEIGHT_FOR_SHORT")) {
-            return "Block Map Settings";
+        if (token.contains("radar") || token.contains("entity")) {
+            return Component.translatable("gui.xaero_entity_radar_settings").getString();
         }
-
-        // Overlays Settings
-        if (u.contains("CHUNK_GRID") || u.contains("SLIME") || u.contains("LIGHT_OVERLAY") || u.contains("OPAC_CLAIMS")) {
-            return "Overlays Settings";
+        if (token.contains("waypoint") || token.contains("deathpoint") || token.contains("teleport")) {
+            return Component.translatable("gui.xaero_waypoint_settings").getString();
         }
-
-        // Waypoint Settings
-        if (u.contains("WAYPOINT") || u.contains("DEATHPOINT") || u.contains("COMPASS") || u.contains("TELEPORT")) {
-            return "Waypoint Settings";
+        if (token.contains("overlay") || token.contains("grid") || token.contains("claim") || token.contains("slime") || token.contains("light_overlay")) {
+            return Component.translatable("gui.xaero_overlay_settings").getString();
         }
-
-        // Info Display Settings
-        if (u.contains("INFO_DISPLAY") || u.contains("CLAIM")) {
-            return "Info Display Settings";
+        if (token.contains("info")) {
+            return Component.translatable("gui.xaero_minimap_info_settings").getString();
         }
-
-        // Entity Radar Settings
-        if (u.contains("RADAR") || u.contains("ENTITY")) {
-            return "Entity Radar Settings";
+        if (token.contains("view") || token.contains("north") || token.contains("zoom") || token.contains("size") || token.contains("shape") || token.contains("lighting") || token.contains("opacity") || token.contains("frame")) {
+            return Component.translatable("gui.xaero_minimap_view_settings").getString();
         }
-
-        // Misc Settings
-        if (u.equals("SAFE_MODE") || u.equals("UPDATE_NOTIFICATIONS") || u.equals("UI_SCALE") || u.equals("MINIMAP_ITEM") || u.equals("RENDER_LAYER")) {
-            return "Misc Settings";
-        }
-
-        return "General Settings";
+        return Component.translatable("gui.xaero_minimap_misc_settings").getString();
     }
 
     /**
-     * Deep scanner for Malilib and mods utilizing Malilib (such as Litematica, Tweakeroo, MiniHUD, ItemScroller).
+     * Completely generic scanner for Malilib and any mod utilizing Malilib.
+     * Discovers all config categories dynamically from registered IConfigHandler inner classes
+     * and resolves titles/paths from metadata and translation keys.
      */
     private static void indexMalilibAndLitematica(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
         // 1. Hotkeys from InputEventHandler.getKeybindManager()
@@ -455,15 +439,17 @@ public class SearchIndexer {
                             Method getCategoryM = cat.getClass().getMethod("getCategory");
                             Method getHotkeysM = cat.getClass().getMethod("getHotkeys");
 
-                            String modName = (String) getModNameM.invoke(cat);
-                            String category = (String) getCategoryM.invoke(cat);
+                            String rawModName = (String) getModNameM.invoke(cat);
+                            String rawCat = (String) getCategoryM.invoke(cat);
                             List<?> hotkeys = (List<?>) getHotkeysM.invoke(cat);
 
-                            String modId = modName.toLowerCase(Locale.ROOT).replace(" ", "");
+                            String modId = rawModName.toLowerCase(Locale.ROOT).replace(" ", "");
+                            String modName = Services.PLATFORM.getModName(modId);
+                            String category = resolveTranslatedCategory(modId, rawCat);
 
                             if (hotkeys != null) {
                                 for (Object hk : hotkeys) {
-                                    addMalilibHotkey(hk, modId, modName, category, results, seenKeys);
+                                    addGenericMalilibHotkey(hk, modId, modName, category, results, seenKeys);
                                 }
                             }
                         } catch (Throwable ignored) {}
@@ -472,108 +458,96 @@ public class SearchIndexer {
             }
         } catch (ClassNotFoundException ignored) {
         } catch (Throwable t) {
-            Constants.LOG.warn("Malilib InputEventHandler scan skipped: {}", t.getMessage());
+            Constants.LOG.debug("Malilib InputEventHandler scan skipped: {}", t.getMessage());
         }
 
-        // 2. Config screens via Registry.CONFIG_SCREEN
+        // 2. Generic scan across all registered IConfigHandler implementations in ConfigManager
         try {
-            Class<?> registryCls = Class.forName("fi.dy.masa.malilib.registry.Registry");
-            Field configScreenF = registryCls.getField("CONFIG_SCREEN");
-            Object configScreenReg = configScreenF.get(null);
-            if (configScreenReg != null) {
-                Method getAllModsM = configScreenReg.getClass().getMethod("getAllModsWithConfigScreens");
-                List<?> modInfos = (List<?>) getAllModsM.invoke(configScreenReg);
-                if (modInfos != null) {
-                    for (Object modInfo : modInfos) {
-                        try {
-                            Method modIdM = modInfo.getClass().getMethod("modId");
-                            Method modNameM = modInfo.getClass().getMethod("modName");
-                            Method supplierM = modInfo.getClass().getMethod("configScreenSupplier");
+            Class<?> configManagerCls = Class.forName("fi.dy.masa.malilib.config.ConfigManager");
+            Method getInstanceM = configManagerCls.getMethod("getInstance");
+            Object configManager = getInstanceM.invoke(null);
+            if (configManager != null) {
+                Field handlersField = configManager.getClass().getDeclaredField("configHandlers");
+                handlersField.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> handlers = (Map<String, Object>) handlersField.get(configManager);
 
-                            String modId = (String) modIdM.invoke(modInfo);
-                            String modName = (String) modNameM.invoke(modInfo);
-                            java.util.function.Supplier<?> supplier = (java.util.function.Supplier<?>) supplierM.invoke(modInfo);
+                if (handlers != null) {
+                    for (Map.Entry<String, Object> entry : handlers.entrySet()) {
+                        String modId = entry.getKey();
+                        Object handler = entry.getValue();
+                        if (handler == null) continue;
 
-                            if (supplier != null) {
-                                Object gui = supplier.get();
-                                if (gui != null) {
-                                    Method getConfigsM = null;
-                                    try {
-                                        getConfigsM = gui.getClass().getMethod("getAllConfigs");
-                                    } catch (NoSuchMethodException e) {
-                                        try {
-                                            getConfigsM = gui.getClass().getMethod("getConfigs");
-                                        } catch (NoSuchMethodException ignored) {}
-                                    }
+                        String modName = Services.PLATFORM.getModName(modId);
+                        Class<?> handlerClass = handler.getClass();
 
-                                    if (getConfigsM != null) {
-                                        List<?> wrappers = (List<?>) getConfigsM.invoke(gui);
-                                        if (wrappers != null) {
-                                            for (Object wrapper : wrappers) {
-                                                try {
-                                                    Method getConfigM = wrapper.getClass().getMethod("getConfig");
-                                                    Object config = getConfigM.invoke(wrapper);
-                                                    if (config != null) {
-                                                        addMalilibConfig(config, modId, modName, "General Settings", results, seenKeys);
-                                                    }
-                                                } catch (Throwable ignored) {}
-                                            }
-                                        }
-                                    }
-                                }
+                        // Discover all inner classes (each corresponds to a category tab)
+                        Class<?>[] innerClasses = handlerClass.getDeclaredClasses();
+                        if (innerClasses.length > 0) {
+                            for (Class<?> innerCls : innerClasses) {
+                                String rawCat = innerCls.getSimpleName();
+                                String category = resolveTranslatedCategory(modId, rawCat);
+                                scanMalilibOptionsFromClass(innerCls, modId, modName, category, results, seenKeys);
                             }
-                        } catch (Throwable ignored) {}
+                        } else {
+                            scanMalilibOptionsFromClass(handlerClass, modId, modName, "General Settings", results, seenKeys);
+                        }
                     }
                 }
             }
         } catch (ClassNotFoundException ignored) {
         } catch (Throwable t) {
-            Constants.LOG.warn("Malilib ConfigScreenRegistry scan skipped: {}", t.getMessage());
+            Constants.LOG.debug("Malilib ConfigManager scan skipped: {}", t.getMessage());
         }
-
-        // 3. Direct inspection of Litematica static config & hotkey classes (fail-safe fallback)
-        scanLitematicaStaticClasses(results, seenKeys);
     }
 
-    private static void scanLitematicaStaticClasses(List<SearchResult> results, Set<String> seenKeys) {
-        String modId = "litematica";
-        String modName = Services.PLATFORM.getModName(modId);
+    private static void scanMalilibOptionsFromClass(Class<?> cls, String modId, String modName, String category, List<SearchResult> results, Set<String> seenKeys) {
+        for (Field field : cls.getFields()) {
+            if (!Modifier.isStatic(field.getModifiers())) continue;
 
-        // Scan fi.dy.masa.litematica.config.Hotkeys
-        try {
-            Class<?> hotkeysCls = Class.forName("fi.dy.masa.litematica.config.Hotkeys");
-            Field hotkeyListF = hotkeysCls.getField("HOTKEY_LIST");
-            List<?> hotkeys = (List<?>) hotkeyListF.get(null);
-            if (hotkeys != null) {
-                for (Object hk : hotkeys) {
-                    addMalilibHotkey(hk, modId, modName, "Hotkeys Settings", results, seenKeys);
-                }
-            }
-        } catch (Throwable ignored) {}
-
-        // Scan Litematica Configs inner classes with specific tab hierarchy
-        Map<String, String> configClassMap = new LinkedHashMap<>();
-        configClassMap.put("fi.dy.masa.litematica.config.Configs$Generic", "Generic Settings");
-        configClassMap.put("fi.dy.masa.litematica.config.Configs$Visuals", "Visuals Settings");
-        configClassMap.put("fi.dy.masa.litematica.config.Configs$InfoOverlays", "Info Overlays Settings");
-        configClassMap.put("fi.dy.masa.litematica.config.Configs$Colors", "Colors Settings");
-
-        for (Map.Entry<String, String> entry : configClassMap.entrySet()) {
             try {
-                Class<?> cls = Class.forName(entry.getKey());
-                String category = entry.getValue();
-                Field optionsF = cls.getField("OPTIONS");
-                List<?> options = (List<?>) optionsF.get(null);
-                if (options != null) {
-                    for (Object opt : options) {
-                        addMalilibConfig(opt, modId, modName, category, results, seenKeys);
+                Object val = field.get(null);
+                if (val instanceof Iterable<?> iterable) {
+                    for (Object opt : iterable) {
+                        addGenericMalilibConfig(opt, modId, modName, category, results, seenKeys);
+                    }
+                } else if (val != null && val.getClass().isArray()) {
+                    int len = java.lang.reflect.Array.getLength(val);
+                    for (int i = 0; i < len; i++) {
+                        addGenericMalilibConfig(java.lang.reflect.Array.get(val, i), modId, modName, category, results, seenKeys);
                     }
                 }
             } catch (Throwable ignored) {}
         }
     }
 
-    private static void addMalilibHotkey(Object hk, String modId, String modName, String category, List<SearchResult> results, Set<String> seenKeys) {
+    private static String resolveTranslatedCategory(String modId, String categoryRaw) {
+        if (categoryRaw == null || categoryRaw.isEmpty()) return "General Settings";
+        String lower = categoryRaw.toLowerCase(Locale.ROOT);
+
+        // Dynamically probe candidate translation keys based on standard modding conventions
+        String[] candidateKeys = new String[] {
+                modId + ".gui.tab." + lower,
+                modId + ".gui.button.config_gui." + lower,
+                modId + ".config.tab." + lower,
+                modId + ".config.category." + lower,
+                modId + ".category." + lower,
+                "category." + modId + "." + lower
+        };
+
+        for (String candidate : candidateKeys) {
+            Component comp = Component.translatable(candidate);
+            String translated = comp.getString();
+            if (!translated.equals(candidate) && !translated.isEmpty()) {
+                return translated.endsWith("Settings") ? translated : (translated + " Settings");
+            }
+        }
+
+        return formatCamelCase(categoryRaw) + " Settings";
+    }
+
+    private static void addGenericMalilibHotkey(Object hk, String modId, String modName, String category, List<SearchResult> results, Set<String> seenKeys) {
+        if (hk == null) return;
         try {
             Method getNameM = hk.getClass().getMethod("getName");
             String name = (String) getNameM.invoke(hk);
@@ -581,6 +555,29 @@ public class SearchIndexer {
 
             String key = SearchResultType.KEYBIND.name() + ":" + modId + ":" + name.toLowerCase(Locale.ROOT);
             if (!seenKeys.add(key)) return;
+
+            String title = "";
+            try {
+                Method getTranslatedNameM = hk.getClass().getMethod("getTranslatedName");
+                Object t = getTranslatedNameM.invoke(hk);
+                if (t instanceof String s && !s.isEmpty() && !s.equals(name)) {
+                    title = s;
+                }
+            } catch (Throwable ignored) {}
+
+            if (title.isEmpty()) {
+                try {
+                    Method getGuiNameM = hk.getClass().getMethod("getConfigGuiDisplayName");
+                    Object t = getGuiNameM.invoke(hk);
+                    if (t instanceof String s && !s.isEmpty() && !s.equals(name)) {
+                        title = s;
+                    }
+                } catch (Throwable ignored) {}
+            }
+
+            if (title.isEmpty()) {
+                title = formatCamelCase(name);
+            }
 
             String comment = "";
             try {
@@ -596,20 +593,7 @@ public class SearchIndexer {
                 if (val instanceof String s) keyVal = s;
             } catch (Throwable ignored) {}
 
-            String title = formatCamelCase(name);
             String path = modName + " > " + category;
-
-            // Enhanced alias matching for Litematica's Area Editor setting
-            if (name.equalsIgnoreCase("openGuiAreaSettings")) {
-                title = "Area Editor / Area Settings GUI";
-                path = modName + " > Hotkeys Settings > Area Editor";
-                if (comment.isEmpty()) {
-                    comment = "Open the Area Settings / Area Editor GUI for the currently selected area";
-                } else if (!comment.toLowerCase(Locale.ROOT).contains("area editor")) {
-                    comment = comment + " (Area Editor)";
-                }
-            }
-
             String id = modId + ":hotkey:" + name;
 
             results.add(new SearchResult(
@@ -621,16 +605,40 @@ public class SearchIndexer {
                     modId,
                     modName,
                     ItemStack.EMPTY,
-                    comment
+                    comment.isEmpty() ? (title + " (" + path + ")") : comment
             ));
         } catch (Throwable ignored) {}
     }
 
-    private static void addMalilibConfig(Object config, String modId, String modName, String category, List<SearchResult> results, Set<String> seenKeys) {
+    private static void addGenericMalilibConfig(Object config, String modId, String modName, String category, List<SearchResult> results, Set<String> seenKeys) {
+        if (config == null) return;
         try {
             Method getNameM = config.getClass().getMethod("getName");
             String name = (String) getNameM.invoke(config);
             if (name == null || name.isEmpty()) return;
+
+            String title = "";
+            try {
+                Method getTranslatedNameM = config.getClass().getMethod("getTranslatedName");
+                Object t = getTranslatedNameM.invoke(config);
+                if (t instanceof String s && !s.isEmpty() && !s.equals(name)) {
+                    title = s;
+                }
+            } catch (Throwable ignored) {}
+
+            if (title.isEmpty()) {
+                try {
+                    Method getGuiNameM = config.getClass().getMethod("getConfigGuiDisplayName");
+                    Object t = getGuiNameM.invoke(config);
+                    if (t instanceof String s && !s.isEmpty() && !s.equals(name)) {
+                        title = s;
+                    }
+                } catch (Throwable ignored) {}
+            }
+
+            if (title.isEmpty()) {
+                title = formatCamelCase(name);
+            }
 
             String comment = "";
             try {
@@ -648,51 +656,26 @@ public class SearchIndexer {
                 }
             } catch (Throwable ignored) {}
 
-            boolean isHotkey = false;
-            try {
-                Class<?> hotkeyCls = Class.forName("fi.dy.masa.malilib.hotkeys.IHotkey");
-                if (hotkeyCls.isInstance(config)) {
-                    isHotkey = true;
-                    try {
-                        Method getStringValueM = config.getClass().getMethod("getStringValue");
-                        Object v = getStringValueM.invoke(config);
-                        if (v instanceof String s) val = s;
-                    } catch (Throwable ignored) {}
-                }
-            } catch (Throwable ignored) {}
-
-            SearchResultType type = isHotkey ? SearchResultType.KEYBIND : SearchResultType.SETTING;
-            String key = type.name() + ":" + modId + ":" + name.toLowerCase(Locale.ROOT);
-            if (!seenKeys.add(key)) return;
-
-            String title = formatCamelCase(name);
             String path = modName + " > " + category;
-
-            if (name.equalsIgnoreCase("openGuiAreaSettings")) {
-                title = "Area Editor / Area Settings GUI";
-                path = modName + " > Hotkeys Settings > Area Editor";
-                if (comment.isEmpty()) {
-                    comment = "Open the Area Settings / Area Editor GUI for the currently selected area";
-                } else if (!comment.toLowerCase(Locale.ROOT).contains("area editor")) {
-                    comment = comment + " (Area Editor)";
-                }
-            }
-
             String id = modId + ":config:" + name;
+            String key = SearchResultType.SETTING.name() + ":" + id.toLowerCase(Locale.ROOT);
 
-            results.add(new SearchResult(
-                    type,
-                    id,
-                    title,
-                    path,
-                    val,
-                    modId,
-                    modName,
-                    ItemStack.EMPTY,
-                    comment
-            ));
+            if (seenKeys.add(key)) {
+                results.add(new SearchResult(
+                        SearchResultType.SETTING,
+                        id,
+                        title,
+                        path,
+                        val,
+                        modId,
+                        modName,
+                        ItemStack.EMPTY,
+                        comment.isEmpty() ? (title + " (" + path + ")") : comment
+                ));
+            }
         } catch (Throwable ignored) {}
     }
+
 
     private static void indexClothConfig(List<SearchResult> results, Set<String> seenKeys) {
         try {
