@@ -345,19 +345,9 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 }
             }
 
-            // On-hover tooltips (for expand button, edit button, and icon box)
+            // On-hover tooltips (only for expand button if hovered)
             if (isBtnHovered) {
                 graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(expanded ? "Collapse details" : "Expand details")), mouseX, mouseY);
-            } else if (isEditHovered) {
-                if (isListeningNow) {
-                    graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to cancel listening").withStyle(ChatFormatting.RED)), mouseX, mouseY);
-                } else if (result.getType() == SearchResultType.KEYBIND) {
-                    graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to rebind key").withStyle(ChatFormatting.YELLOW)), mouseX, mouseY);
-                } else {
-                    graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to edit / toggle setting").withStyle(ChatFormatting.GREEN)), mouseX, mouseY);
-                }
-            } else if (isIconHovered) {
-                graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(type.getLabel()).withStyle(ChatFormatting.GOLD)), mouseX, mouseY);
             }
         }
 
@@ -370,45 +360,21 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             int expandBtnX = this.getX() + this.getWidth() - expandBtnSize - 6;
             int expandBtnY = this.getY() + 8;
 
+            // 1. Expand / collapse details (+ / -)
             if (mx >= expandBtnX && mx <= expandBtnX + expandBtnSize && my >= expandBtnY && my <= expandBtnY + expandBtnSize) {
                 toggleExpanded();
                 return true;
             }
 
-            int editBtnW = 30;
-            int editBtnH = 18;
-            int editBtnX = expandBtnX - editBtnW - 4;
-            int editBtnY = this.getY() + 8;
-
+            // 2. Directly change setting / keybind on click!
             if (result.isEditable()) {
-                // Click on [Edit] button
-                if (mx >= editBtnX && mx <= editBtnX + editBtnW && my >= editBtnY && my <= editBtnY + editBtnH) {
-                    if (onEdit != null) {
-                        onEdit.accept(result);
-                        return true;
-                    }
-                }
-
-                // Click directly on [Value] text on line 1
-                int curX = this.getX() + 5 + 22 + 7;
-                int rightBoundaryX = editBtnX - 4;
-                int availableWidth = rightBoundaryX - curX;
-                int maxTitleWidth = Math.max(availableWidth / 2, 130);
-                String displayTitle = font.plainSubstrByWidth(result.getTitle(), maxTitleWidth);
-                int titleRenderWidth = font.width(displayTitle);
-                int valStartX = curX + titleRenderWidth + 6;
-                int maxValWidth = availableWidth - titleRenderWidth - 8;
-                String valStr = "[" + result.getValue() + "]";
-                int valW = font.width(font.plainSubstrByWidth(valStr, maxValWidth));
-
-                if (mx >= valStartX && mx <= valStartX + valW && my >= this.getY() + 4 && my <= this.getY() + 18) {
-                    if (onEdit != null) {
-                        onEdit.accept(result);
-                        return true;
-                    }
+                if (onEdit != null) {
+                    onEdit.accept(result);
+                    return true;
                 }
             }
 
+            // 3. Otherwise (items, enchantments, mods, biomes), copy value to clipboard
             if (onSelected != null) {
                 onSelected.accept(result);
                 return true;
