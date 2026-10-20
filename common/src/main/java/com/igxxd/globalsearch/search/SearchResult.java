@@ -18,9 +18,14 @@ public class SearchResult {
     private final String modId;
     private final String modName;
     private final ItemStack icon;
+    private final String description;
     private final String searchTarget;
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon) {
+        this(type, id, title, path, value, modId, modName, icon, "");
+    }
+
+    public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, String description) {
         this.type = type;
         this.id = id != null ? id : "";
         this.title = title != null ? title : "";
@@ -29,9 +34,10 @@ public class SearchResult {
         this.modId = modId != null ? modId : "minecraft";
         this.modName = modName != null ? modName : "Minecraft";
         this.icon = icon != null ? icon : ItemStack.EMPTY;
+        this.description = description != null ? description : "";
 
         // Pre-compute lower-case search target for fast substring and multi-word matching
-        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + type.name())
+        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + this.description + " " + type.name())
                 .toLowerCase(Locale.ROOT);
     }
 
@@ -88,6 +94,10 @@ public class SearchResult {
         return id;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     public List<Component> getTooltip() {
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.literal(title).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
@@ -107,6 +117,11 @@ public class SearchResult {
         tooltip.add(Component.literal("Mod: ").withStyle(ChatFormatting.DARK_GRAY)
                 .append(Component.literal(modName).withStyle(ChatFormatting.BLUE))
                 .append(Component.literal(" (" + modId + ")").withStyle(ChatFormatting.DARK_GRAY)));
+
+        if (!description.isEmpty()) {
+            tooltip.add(Component.literal("Info: ").withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(description).withStyle(ChatFormatting.GOLD)));
+        }
 
         if (!id.isEmpty() && !id.equals(path)) {
             tooltip.add(Component.literal("ID: ").withStyle(ChatFormatting.DARK_GRAY)

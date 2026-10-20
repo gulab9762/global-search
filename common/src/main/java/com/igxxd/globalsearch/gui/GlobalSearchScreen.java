@@ -36,21 +36,30 @@ public class GlobalSearchScreen extends Screen {
 
     @Override
     protected void init() {
-        if (this.allIndexedResults.isEmpty() && this.minecraft != null) {
-            this.allIndexedResults = SearchIndexer.indexAll(this.minecraft);
+        if (this.minecraft != null) {
+            this.allIndexedResults = SearchIndexer.getOrIndex(this.minecraft);
         }
 
         // Expanded panel length/width to fill almost the entire screen nicely
         int panelWidth = Math.max(280, this.width - 28);
         int panelLeft = (this.width - panelWidth) / 2;
 
+        int rescanBtnWidth = 64;
+        int searchBoxWidth = panelWidth - rescanBtnWidth - 6;
+
         // 1. Search Box
         int searchBoxY = 26;
-        this.searchBox = new EditBox(this.font, panelLeft, searchBoxY, panelWidth, 20, Component.literal("Search"));
+        this.searchBox = new EditBox(this.font, panelLeft, searchBoxY, searchBoxWidth, 20, Component.literal("Search"));
         this.searchBox.setHint(Component.literal("Search keybinds, settings, items, mods...").withStyle(ChatFormatting.DARK_GRAY));
         this.searchBox.setResponder(text -> updateFilter());
         this.addRenderableWidget(this.searchBox);
         this.setInitialFocus(this.searchBox);
+
+        // 1b. Rescan Button
+        Button rescanBtn = Button.builder(Component.literal("↻ Rescan"), b -> triggerRescan())
+                .bounds(panelLeft + searchBoxWidth + 6, searchBoxY, rescanBtnWidth, 20)
+                .build();
+        this.addRenderableWidget(rescanBtn);
 
         // 2. Filter Category Buttons
         int buttonY = 50;
@@ -122,6 +131,16 @@ public class GlobalSearchScreen extends Screen {
             String valueToCopy = result.getCopyValue();
             this.minecraft.keyboardHandler.setClipboard(valueToCopy);
             this.copiedNotification = valueToCopy;
+            this.notificationExpiry = System.currentTimeMillis() + 3000;
+        }
+    }
+
+    private void triggerRescan() {
+        if (this.minecraft != null) {
+            int count = SearchIndexer.rescan(this.minecraft);
+            this.allIndexedResults = SearchIndexer.getOrIndex(this.minecraft);
+            updateFilter();
+            this.copiedNotification = "Rescanned & indexed " + count + " entries";
             this.notificationExpiry = System.currentTimeMillis() + 3000;
         }
     }
