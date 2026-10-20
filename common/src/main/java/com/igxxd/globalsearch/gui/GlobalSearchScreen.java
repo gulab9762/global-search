@@ -15,6 +15,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -28,7 +29,7 @@ public class GlobalSearchScreen extends Screen {
     private SearchResultList resultList;
     private SearchResultType currentFilter = SearchResultType.ALL;
     private boolean searchByKeyValue = false;
-    private String currentSearchQuery = "";
+    private static String savedSearchQuery = "";
 
     private String copiedNotification = null;
     private long notificationExpiry = 0;
@@ -63,19 +64,13 @@ public class GlobalSearchScreen extends Screen {
         int rescanBtnWidth = 64;
         int searchBoxWidth = this.width - (sideMargin * 2) - rescanBtnWidth - 6;
 
-        String prevText = this.currentSearchQuery;
-        if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
-            prevText = this.searchBox.getValue();
-        }
-        this.currentSearchQuery = prevText;
-
         this.searchBox = new EditBox(this.font, sideMargin, topMargin, searchBoxWidth, 20, Component.literal("Search"));
         this.searchBox.setHint(Component.literal("Search keybinds, settings, items, mods...").withStyle(ChatFormatting.DARK_GRAY));
-        if (!this.currentSearchQuery.isEmpty()) {
-            this.searchBox.setValue(this.currentSearchQuery);
+        if (!savedSearchQuery.isEmpty()) {
+            this.searchBox.setValue(savedSearchQuery);
         }
         this.searchBox.setResponder(text -> {
-            this.currentSearchQuery = text;
+            savedSearchQuery = text;
             updateFilter();
         });
         this.addRenderableWidget(this.searchBox);
@@ -206,7 +201,7 @@ public class GlobalSearchScreen extends Screen {
 
     private void updateFilter() {
         filteredResults.clear();
-        String query = searchBox != null ? searchBox.getValue().trim().toLowerCase(Locale.ROOT) : "";
+        String query = searchBox != null ? searchBox.getValue().trim().toLowerCase(Locale.ROOT) : savedSearchQuery.trim().toLowerCase(Locale.ROOT);
         String[] tokens = query.isEmpty() ? new String[0] : query.split("\\s+");
 
         for (SearchResult result : allIndexedResults) {
@@ -226,8 +221,40 @@ public class GlobalSearchScreen extends Screen {
             }
         }
 
+        // Prioritize: result name starting with query, or key value starting with query when enabled
+        if (!query.isEmpty() && !filteredResults.isEmpty()) {
+            boolean byKeyVal = currentFilter.equals(SearchResultType.KEYBIND) && searchByKeyValue;
+            filteredResults.sort(Comparator.comparingInt(r -> getRelevanceScore(r, query, byKeyVal)));
+        }
+
         if (resultList != null) {
             resultList.setResults(filteredResults);
+        }
+    }
+
+    private int getRelevanceScore(SearchResult result, String query, boolean byKeyValue) {
+        String title = result.getTitle().toLowerCase(Locale.ROOT);
+        String val = result.getValue().toLowerCase(Locale.ROOT);
+
+        if (byKeyValue) {
+            // Check key value starting with, then containing, then remaining results
+            if (val.startsWith(query)) return 0;
+            if (val.contains(query)) return 1;
+            if (title.startsWith(query)) return 2;
+            if (title.contains(query)) return 3;
+            return 4;
+        } else {
+            // Prioritize result name starting with query
+            if (title.startsWith(query)) return 0;
+            // Any word in the result name starting with query
+            for (String part : title.split("[\\s_\\->\\[\\]()]+")) {
+                if (part.startsWith(query)) return 1;
+            }
+            if (title.contains(query)) return 2;
+            if (!val.isEmpty() && val.startsWith(query)) return 3;
+            if (!val.isEmpty() && val.contains(query)) return 4;
+            if (result.getPath().toLowerCase(Locale.ROOT).contains(query)) return 5;
+            return 6;
         }
     }
 
@@ -304,6 +331,20 @@ public class GlobalSearchScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        // 1. Cross icon to clear search inside right hand side of searchBox
+        if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
+            int clearBtnSize = 16;
+            int clearBtnX = this.searchBox.getX() + this.searchBox.getWidth() - clearBtnSize - 3;
+            int clearBtnY = this.searchBox.getY() + (this.searchBox.getHeight() - clearBtnSize) / 2;
+            if (event.x() >= clearBtnX && event.x() <= clearBtnX + clearBtnSize &&
+                event.y() >= clearBtnY && event.y() <= clearBtnY + clearBtnSize) {
+                this.searchBox.setValue("");
+                savedSearchQuery = "";
+                updateFilter();
+                return true;
+            }
+        }
+
         if (this.listeningKeyMapping != null && System.currentTimeMillis() - this.listeningStartTime > 150) {
             this.listeningKeyMapping.setKey(InputConstants.Type.MOUSE.getOrCreate(event.button()));
             net.minecraft.client.KeyMapping.resetMapping();
@@ -366,6 +407,19 @@ public class GlobalSearchScreen extends Screen {
 
         // Render widgets (search box, rescan button, filter buttons, checkbox, result list)
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+
+        // Clear cross icon on right-hand side inside search input box
+        if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
+            int clearBtnSize = 16;
+            int clearBtnX = this.searchBox.getX() + this.searchBox.getWidth() - clearBtnSize - 3;
+            int clearBtnY = this.searchBox.getY() + (this.searchBox.getHeight() - clearBtnSize) / 2;
+            boolean isClearHovered = mouseX >= clearBtnX && mouseX <= clearBtnX + clearBtnSize &&
+                                     mouseY >= clearBtnY && mouseY <= clearBtnY + clearBtnSize;
+            if (isClearHovered) {
+                graphics.fill(clearBtnX, clearBtnY, clearBtnX + clearBtnSize, clearBtnY + clearBtnSize, 0x44FFFFFF);
+            }
+            graphics.centeredText(this.font, "✕", clearBtnX + (clearBtnSize / 2), clearBtnY + (clearBtnSize - 9) / 2, isClearHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
+        }
 
         // Footer status / instructions
         int footerY = this.height - 14;

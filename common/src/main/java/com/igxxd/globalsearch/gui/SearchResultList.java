@@ -231,19 +231,11 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 }
             }
 
-            // 4. Line 2: Mod Name + Path / Category (collapsed preview)
+            // 4. Line 2: Path / Category (Mod name is shown when expanded in details)
             int line2Y = y + 19;
-            String modText = "Mod: " + result.getModName();
-            graphics.text(font, modText, curX, line2Y, 0xFF77A3FF);
-            int modRenderWidth = font.width(modText);
-
-            int pathStartX = curX + modRenderWidth;
-            int pathAvailableWidth = rightBoundaryX - pathStartX;
-
-            if (!result.getPath().isEmpty() && pathAvailableWidth > 30) {
-                String pathText = " • " + result.getPath();
-                String displayPath = font.plainSubstrByWidth(pathText, pathAvailableWidth);
-                graphics.text(font, displayPath, pathStartX, line2Y, 0xFFAAAAAA);
+            if (!result.getPath().isEmpty() && availableWidth > 20) {
+                String displayPath = font.plainSubstrByWidth(result.getPath(), availableWidth);
+                graphics.text(font, displayPath, curX, line2Y, 0xFFAAAAAA);
             }
 
             // 5. Edit Button (if editable)
