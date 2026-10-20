@@ -87,31 +87,43 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
         public void toggleExpanded() {
             this.expanded = !this.expanded;
             if (this.expanded) {
-                int contentWidth = Math.max(this.getWidth() - 48, 100);
-                int h = 38 + 6; // header + divider
+                int contentWidth = Math.max(this.getWidth() - 56, 100);
+                int h = 38 + 6; // header + card top gap
 
-                // Line 1: Type & Mod
+                // Card top padding
+                h += 6;
+
+                // Line 1: Type
                 h += 12;
 
-                // Line 2: Full Path
+                // Line 2: Mod (on next line)
+                h += 12;
+
+                // Line 3: Full Path
                 if (!result.getPath().isEmpty()) {
                     var pathLines = font.split(Component.literal("Path: " + result.getPath()), contentWidth);
                     h += Math.max(1, pathLines.size()) * 11;
                 }
 
-                // Line 3: ID (if distinct from path and non-empty)
+                // Line 4: ID (if distinct from path and non-empty)
                 if (!result.getId().isEmpty() && !result.getId().equals(result.getPath())) {
                     h += 12;
                 }
 
-                // Line 4: Description / Info
+                // Line 5: Description / Info
                 if (!result.getDescription().isEmpty()) {
                     var descLines = font.split(Component.literal(result.getDescription()), contentWidth);
                     h += 12 + Math.max(1, descLines.size()) * 11;
                 }
 
-                // Bottom padding
-                h += 6;
+                // Line 6: Tags (on next line)
+                if (result.hasTags()) {
+                    var tagLines = font.split(Component.literal(result.getTags()), contentWidth);
+                    h += 12 + Math.max(1, tagLines.size()) * 11;
+                }
+
+                // Card bottom padding + row margin
+                h += 10;
 
                 this.setHeight(h);
             } else {
@@ -206,50 +218,84 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             String symbol = expanded ? "-" : "+";
             graphics.centeredText(font, symbol, expandBtnX + (expandBtnSize / 2), expandBtnY + (expandBtnSize - 9) / 2, isBtnHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
 
-            // 6. Expanded Full Details Area (moved from hover tooltip into row)
+            // 6. Expanded Full Details Area (Vanilla hover tooltip-style card)
             if (expanded) {
-                int contentWidth = Math.max((expandBtnX + expandBtnSize) - curX, 100);
-                int curY = y + 36;
+                int cardX = curX - 6;
+                int cardY = y + 36;
+                int cardW = (expandBtnX + expandBtnSize) - cardX + 2;
+                int cardH = (y + height - 4) - cardY;
+                int contentWidth = Math.max(cardW - 14, 100);
 
-                // Divider line
-                graphics.fill(curX, curY, expandBtnX + expandBtnSize, curY + 1, 0x33FFFFFF);
-                curY += 6;
+                // Authentic Vanilla Tooltip Box
+                // Main dark background
+                graphics.fill(cardX + 1, cardY, cardX + cardW - 1, cardY + cardH, 0xF0100010);
+                graphics.fill(cardX, cardY + 1, cardX + cardW, cardY + cardH - 1, 0xF0100010);
 
-                // Detail 1: Type and Mod ID
-                Component typeAndMod = Component.literal("Type: ").withStyle(ChatFormatting.DARK_GRAY)
-                        .append(Component.literal(type.getLabel()).withStyle(ChatFormatting.YELLOW))
-                        .append(Component.literal("  •  Mod: ").withStyle(ChatFormatting.DARK_GRAY))
-                        .append(Component.literal(result.getModName()).withStyle(ChatFormatting.AQUA))
-                        .append(Component.literal(" (" + result.getModId() + ")").withStyle(ChatFormatting.DARK_GRAY));
-                graphics.text(font, typeAndMod, curX, curY, 0xFFFFFFFF);
+                // Outer border (purple/blue gradient)
+                graphics.fill(cardX + 1, cardY, cardX + cardW - 1, cardY + 1, 0x505000FF);
+                graphics.fill(cardX + 1, cardY + cardH - 1, cardX + cardW - 1, cardY + cardH, 0x5028007F);
+                graphics.fillGradient(cardX, cardY + 1, cardX + 1, cardY + cardH - 1, 0x505000FF, 0x5028007F);
+                graphics.fillGradient(cardX + cardW - 1, cardY + 1, cardX + cardW, cardY + cardH - 1, 0x505000FF, 0x5028007F);
+
+                // Inner border highlight (purple/blue gradient)
+                graphics.fill(cardX + 1, cardY + 1, cardX + cardW - 1, cardY + 2, 0x505000FF);
+                graphics.fill(cardX + 1, cardY + cardH - 2, cardX + cardW - 1, cardY + cardH - 1, 0x5028007F);
+                graphics.fillGradient(cardX + 1, cardY + 2, cardX + 2, cardY + cardH - 2, 0x505000FF, 0x5028007F);
+                graphics.fillGradient(cardX + cardW - 2, cardY + 2, cardX + cardW - 1, cardY + cardH - 2, 0x505000FF, 0x5028007F);
+
+                int innerX = cardX + 7;
+                int curY = cardY + 6;
+
+                // Detail 1: Type (Different color: GOLD & YELLOW)
+                Component typeComp = Component.literal("Type: ").withStyle(ChatFormatting.GOLD)
+                        .append(Component.literal(type.getLabel()).withStyle(ChatFormatting.YELLOW));
+                graphics.text(font, typeComp, innerX, curY, 0xFFFFFFFF);
                 curY += 12;
 
-                // Detail 2: Full Path
+                // Detail 2: Mod (Moved to next line! Different color: BLUE & AQUA)
+                Component modComp = Component.literal("Mod: ").withStyle(ChatFormatting.BLUE)
+                        .append(Component.literal(result.getModName()).withStyle(ChatFormatting.AQUA))
+                        .append(Component.literal(" (" + result.getModId() + ")").withStyle(ChatFormatting.DARK_GRAY));
+                graphics.text(font, modComp, innerX, curY, 0xFFFFFFFF);
+                curY += 12;
+
+                // Detail 3: Full Path
                 if (!result.getPath().isEmpty()) {
-                    Component pathComp = Component.literal("Path: ").withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal(result.getPath()).withStyle(ChatFormatting.WHITE));
+                    Component pathComp = Component.literal("Path: ").withStyle(ChatFormatting.DARK_GRAY)
+                            .append(Component.literal(result.getPath()).withStyle(ChatFormatting.GRAY));
                     var pathLines = font.split(pathComp, contentWidth);
                     for (var pline : pathLines) {
-                        graphics.text(font, pline, curX, curY, 0xFFCCCCCC);
+                        graphics.text(font, pline, innerX, curY, 0xFFCCCCCC);
                         curY += 11;
                     }
                 }
 
-                // Detail 3: ID (if distinct)
+                // Detail 4: ID (if distinct)
                 if (!result.getId().isEmpty() && !result.getId().equals(result.getPath())) {
                     Component idComp = Component.literal("ID: ").withStyle(ChatFormatting.DARK_GRAY)
                             .append(Component.literal(result.getId()).withStyle(ChatFormatting.DARK_AQUA));
-                    graphics.text(font, idComp, curX, curY, 0xFF88DDAA);
+                    graphics.text(font, idComp, innerX, curY, 0xFF88DDAA);
                     curY += 12;
                 }
 
-                // Detail 4: Description / Info
+                // Detail 5: Description
                 if (!result.getDescription().isEmpty()) {
-                    graphics.text(font, Component.literal("Description:").withStyle(ChatFormatting.GOLD), curX, curY, 0xFFFFAA00);
+                    graphics.text(font, Component.literal("Description:").withStyle(ChatFormatting.GOLD), innerX, curY, 0xFFFFAA00);
                     curY += 11;
                     var descLines = font.split(Component.literal(result.getDescription()), contentWidth);
                     for (var dline : descLines) {
-                        graphics.text(font, dline, curX, curY, 0xFFE0E0E0);
+                        graphics.text(font, dline, innerX, curY, 0xFFE0E0E0);
+                        curY += 11;
+                    }
+                }
+
+                // Detail 6: Tags (Moved to next line!)
+                if (result.hasTags()) {
+                    graphics.text(font, Component.literal("Tags:").withStyle(ChatFormatting.DARK_AQUA), innerX, curY, 0xFF55FFFF);
+                    curY += 11;
+                    var tagLines = font.split(Component.literal(result.getTags()).withStyle(ChatFormatting.AQUA), contentWidth);
+                    for (var tline : tagLines) {
+                        graphics.text(font, tline, innerX, curY, 0xFF77DDAA);
                         curY += 11;
                     }
                 }

@@ -21,6 +21,7 @@ public class SearchResult {
     private final net.minecraft.world.item.Item item;
     private ItemStack icon;
     private String description;
+    private final String tags;
     private final String searchTarget;
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon) {
@@ -59,6 +60,21 @@ public class SearchResult {
                 }
             }
         }
+
+        String extractedTags = "";
+        int tagIdx = desc.indexOf(" • Tags: ");
+        if (tagIdx != -1) {
+            extractedTags = desc.substring(tagIdx + 9).trim();
+            desc = desc.substring(0, tagIdx).trim();
+        } else {
+            int tagIdx2 = desc.indexOf("Tags: ");
+            if (tagIdx2 != -1) {
+                extractedTags = desc.substring(tagIdx2 + 6).trim();
+                desc = desc.substring(0, tagIdx2).trim();
+            }
+        }
+        this.tags = extractedTags;
+
         if (desc.isEmpty()) {
             if (!this.path.isEmpty()) {
                 desc = this.title + " (" + this.path + ")";
@@ -69,7 +85,7 @@ public class SearchResult {
         this.description = desc;
 
         // Pre-compute lower-case search target for fast substring and multi-word matching
-        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + this.description.replace('\n', ' ') + " " + type.name())
+        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + this.description.replace('\n', ' ') + " " + this.tags + " " + type.name())
                 .toLowerCase(Locale.ROOT);
     }
 
@@ -158,6 +174,14 @@ public class SearchResult {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public boolean hasTags() {
+        return tags != null && !tags.isEmpty();
     }
 
     public List<Component> getTooltip() {
