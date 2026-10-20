@@ -13,14 +13,26 @@ import net.minecraft.network.chat.Component;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class SearchResultList extends ObjectSelectionList<SearchResultList.ResultEntry> {
 
     private final Consumer<SearchResult> onSelected;
+    private final Consumer<SearchResult> onEdit;
+    private final Predicate<SearchResult> isListening;
 
-    public SearchResultList(Minecraft minecraft, int width, int height, int y, int itemHeight, Consumer<SearchResult> onSelected) {
+    public SearchResultList(Minecraft minecraft, int width, int height, int y, int itemHeight,
+                            Consumer<SearchResult> onSelected,
+                            Consumer<SearchResult> onEdit,
+                            Predicate<SearchResult> isListening) {
         super(minecraft, width, height, y, itemHeight);
         this.onSelected = onSelected;
+        this.onEdit = onEdit;
+        this.isListening = isListening;
+    }
+
+    public SearchResultList(Minecraft minecraft, int width, int height, int y, int itemHeight, Consumer<SearchResult> onSelected) {
+        this(minecraft, width, height, y, itemHeight, onSelected, null, null);
     }
 
     public void refreshLayout() {
@@ -55,7 +67,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
     public void setResults(Collection<SearchResult> results) {
         this.clearEntries();
         for (SearchResult result : results) {
-            this.addEntry(new ResultEntry(this, result, this.minecraft.font, this.onSelected));
+            this.addEntry(new ResultEntry(this, result, this.minecraft.font, this.onSelected, this.onEdit, this.isListening));
         }
         this.setScrollAmount(0);
     }
@@ -66,13 +78,20 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
         private final SearchResult result;
         private final Font font;
         private final Consumer<SearchResult> onSelected;
+        private final Consumer<SearchResult> onEdit;
+        private final Predicate<SearchResult> isListening;
         private boolean expanded = false;
 
-        public ResultEntry(SearchResultList list, SearchResult result, Font font, Consumer<SearchResult> onSelected) {
+        public ResultEntry(SearchResultList list, SearchResult result, Font font,
+                           Consumer<SearchResult> onSelected,
+                           Consumer<SearchResult> onEdit,
+                           Predicate<SearchResult> isListening) {
             this.list = list;
             this.result = result;
             this.font = font;
             this.onSelected = onSelected;
+            this.onEdit = onEdit;
+            this.isListening = isListening;
             this.setHeight(38);
         }
 
@@ -149,13 +168,21 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             int expandBtnY = y + 8;
             boolean isBtnHovered = mouseX >= expandBtnX && mouseX <= expandBtnX + expandBtnSize && mouseY >= expandBtnY && mouseY <= expandBtnY + expandBtnSize;
 
+            int editBtnW = 30;
+            int editBtnH = 18;
+            int editBtnX = expandBtnX - editBtnW - 4;
+            int editBtnY = y + 8;
+            boolean hasEdit = result.isEditable();
+            boolean isListeningNow = isListening != null && isListening.test(result);
+            boolean isEditHovered = hasEdit && mouseX >= editBtnX && mouseX <= editBtnX + editBtnW && mouseY >= editBtnY && mouseY <= editBtnY + editBtnH;
+
             int iconBoxSize = 22;
             int iconBoxX = x + 5;
             int iconBoxY = y + 8;
             boolean isIconHovered = mouseX >= iconBoxX && mouseX <= iconBoxX + iconBoxSize && mouseY >= iconBoxY && mouseY <= iconBoxY + iconBoxSize;
 
             // Background card with hover highlight
-            if ((isHovered && !isBtnHovered && !isIconHovered) || isFocused()) {
+            if ((isHovered && !isBtnHovered && !isEditHovered && !isIconHovered) || isFocused()) {
                 graphics.fill(x, y + 1, x + width, y + height - 1, 0x33FFFFFF);
             } else {
                 graphics.fill(x, y + 1, x + width, y + height - 1, 0x14000000);
@@ -179,22 +206,28 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             }
 
             int curX = iconBoxX + iconBoxSize + 7;
-            int availableWidth = (expandBtnX - 6) - curX;
+            int rightBoundaryX = hasEdit ? editBtnX - 4 : expandBtnX - 4;
+            int availableWidth = rightBoundaryX - curX;
 
             // 3. Line 1: Title + Value
             int line1Y = y + 5;
             String title = result.getTitle();
-            int maxTitleWidth = Math.max(availableWidth / 2, 140);
+            int maxTitleWidth = Math.max(availableWidth / 2, 130);
             String displayTitle = font.plainSubstrByWidth(title, maxTitleWidth);
             graphics.text(font, displayTitle, curX, line1Y, 0xFFFFFFFF);
 
             int titleRenderWidth = font.width(displayTitle);
-            if (!result.getValue().isEmpty()) {
+            int valStartX = curX + titleRenderWidth + 6;
+            int maxValWidth = availableWidth - titleRenderWidth - 8;
+
+            if (isListeningNow) {
+                graphics.text(font, "[Press Any Key...]", valStartX, line1Y, 0xFFFFCC00);
+            } else if (!result.getValue().isEmpty()) {
                 String valStr = "[" + result.getValue() + "]";
-                int maxValWidth = availableWidth - titleRenderWidth - 8;
                 if (maxValWidth > 20) {
                     String displayVal = font.plainSubstrByWidth(valStr, maxValWidth);
-                    graphics.text(font, displayVal, curX + titleRenderWidth + 6, line1Y, type.getValueColor());
+                    int valColor = isEditHovered ? 0xFF55FFFF : type.getValueColor();
+                    graphics.text(font, displayVal, valStartX, line1Y, valColor);
                 }
             }
 
@@ -205,7 +238,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             int modRenderWidth = font.width(modText);
 
             int pathStartX = curX + modRenderWidth;
-            int pathAvailableWidth = (expandBtnX - 6) - pathStartX;
+            int pathAvailableWidth = rightBoundaryX - pathStartX;
 
             if (!result.getPath().isEmpty() && pathAvailableWidth > 30) {
                 String pathText = " • " + result.getPath();
@@ -213,12 +246,23 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 graphics.text(font, displayPath, pathStartX, line2Y, 0xFFAAAAAA);
             }
 
-            // 5. Expand / Collapse Button (+ / -)
+            // 5. Edit Button (if editable)
+            if (hasEdit) {
+                if (isListeningNow) {
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, 0x99FFAA00);
+                    graphics.centeredText(font, "> ? <", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 9) / 2, 0xFFFFFFFF);
+                } else {
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, isEditHovered ? 0x44FFFFFF : 0x1AFFFFFF);
+                    graphics.centeredText(font, "Edit", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 9) / 2, isEditHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
+                }
+            }
+
+            // 6. Expand / Collapse Button (+ / -)
             graphics.fill(expandBtnX, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, isBtnHovered ? 0x44FFFFFF : 0x1AFFFFFF);
             String symbol = expanded ? "-" : "+";
             graphics.centeredText(font, symbol, expandBtnX + (expandBtnSize / 2), expandBtnY + (expandBtnSize - 9) / 2, isBtnHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
 
-            // 6. Expanded Full Details Area (Vanilla hover tooltip-style card)
+            // 7. Expanded Full Details Area (Vanilla hover tooltip-style card)
             if (expanded) {
                 int cardX = curX - 6;
                 int cardY = y + 36;
@@ -246,13 +290,13 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 int innerX = cardX + 7;
                 int curY = cardY + 6;
 
-                // Detail 1: Type (Different color: GOLD & YELLOW)
+                // Detail 1: Type (GOLD & YELLOW)
                 Component typeComp = Component.literal("Type: ").withStyle(ChatFormatting.GOLD)
                         .append(Component.literal(type.getLabel()).withStyle(ChatFormatting.YELLOW));
                 graphics.text(font, typeComp, innerX, curY, 0xFFFFFFFF);
                 curY += 12;
 
-                // Detail 2: Mod (Moved to next line! Different color: BLUE & AQUA)
+                // Detail 2: Mod (BLUE & AQUA)
                 Component modComp = Component.literal("Mod: ").withStyle(ChatFormatting.BLUE)
                         .append(Component.literal(result.getModName()).withStyle(ChatFormatting.AQUA))
                         .append(Component.literal(" (" + result.getModId() + ")").withStyle(ChatFormatting.DARK_GRAY));
@@ -289,7 +333,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                     }
                 }
 
-                // Detail 6: Tags (Moved to next line!)
+                // Detail 6: Tags
                 if (result.hasTags()) {
                     graphics.text(font, Component.literal("Tags:").withStyle(ChatFormatting.DARK_AQUA), innerX, curY, 0xFF55FFFF);
                     curY += 11;
@@ -301,9 +345,17 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 }
             }
 
-            // Minimal, clean on-hover tooltips (for expand button and icon box)
+            // On-hover tooltips (for expand button, edit button, and icon box)
             if (isBtnHovered) {
                 graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(expanded ? "Collapse details" : "Expand details")), mouseX, mouseY);
+            } else if (isEditHovered) {
+                if (isListeningNow) {
+                    graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to cancel listening").withStyle(ChatFormatting.RED)), mouseX, mouseY);
+                } else if (result.getType() == SearchResultType.KEYBIND) {
+                    graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to rebind key").withStyle(ChatFormatting.YELLOW)), mouseX, mouseY);
+                } else {
+                    graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to edit / toggle setting").withStyle(ChatFormatting.GREEN)), mouseX, mouseY);
+                }
             } else if (isIconHovered) {
                 graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(type.getLabel()).withStyle(ChatFormatting.GOLD)), mouseX, mouseY);
             }
@@ -321,6 +373,40 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             if (mx >= expandBtnX && mx <= expandBtnX + expandBtnSize && my >= expandBtnY && my <= expandBtnY + expandBtnSize) {
                 toggleExpanded();
                 return true;
+            }
+
+            int editBtnW = 30;
+            int editBtnH = 18;
+            int editBtnX = expandBtnX - editBtnW - 4;
+            int editBtnY = this.getY() + 8;
+
+            if (result.isEditable()) {
+                // Click on [Edit] button
+                if (mx >= editBtnX && mx <= editBtnX + editBtnW && my >= editBtnY && my <= editBtnY + editBtnH) {
+                    if (onEdit != null) {
+                        onEdit.accept(result);
+                        return true;
+                    }
+                }
+
+                // Click directly on [Value] text on line 1
+                int curX = this.getX() + 5 + 22 + 7;
+                int rightBoundaryX = editBtnX - 4;
+                int availableWidth = rightBoundaryX - curX;
+                int maxTitleWidth = Math.max(availableWidth / 2, 130);
+                String displayTitle = font.plainSubstrByWidth(result.getTitle(), maxTitleWidth);
+                int titleRenderWidth = font.width(displayTitle);
+                int valStartX = curX + titleRenderWidth + 6;
+                int maxValWidth = availableWidth - titleRenderWidth - 8;
+                String valStr = "[" + result.getValue() + "]";
+                int valW = font.width(font.plainSubstrByWidth(valStr, maxValWidth));
+
+                if (mx >= valStartX && mx <= valStartX + valW && my >= this.getY() + 4 && my <= this.getY() + 18) {
+                    if (onEdit != null) {
+                        onEdit.accept(result);
+                        return true;
+                    }
+                }
             }
 
             if (onSelected != null) {

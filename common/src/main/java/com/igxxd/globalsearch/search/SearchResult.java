@@ -1,20 +1,29 @@
 package com.igxxd.globalsearch.search;
 
+import com.igxxd.globalsearch.search.provider.SearchIndexProvider;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public class SearchResult {
+
+    @FunctionalInterface
+    public interface ResultEditHandler {
+        boolean handleEdit(Minecraft minecraft, Screen screen, Consumer<String> onValueChanged);
+    }
 
     private final SearchResultType type;
     private final String id;
     private final String title;
     private final String path;
-    private final String value;
+    private String value;
     private final String modId;
     private final String modName;
     private final ItemStack initialIcon;
@@ -23,6 +32,9 @@ public class SearchResult {
     private String description;
     private final String tags;
     private final String searchTarget;
+    private final boolean editable;
+    private final ResultEditHandler editHandler;
+    private final SearchIndexProvider provider;
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon) {
         this(type, id, title, path, value, modId, modName, icon, null, "");
@@ -37,6 +49,10 @@ public class SearchResult {
     }
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, net.minecraft.world.item.Item item, String description) {
+        this(type, id, title, path, value, modId, modName, icon, item, description, false, null, null);
+    }
+
+    public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, net.minecraft.world.item.Item item, String description, boolean editable, ResultEditHandler editHandler, SearchIndexProvider provider) {
         this.type = type;
         this.id = id != null ? id : "";
         this.title = title != null ? title : "";
@@ -47,6 +63,9 @@ public class SearchResult {
         this.initialIcon = icon != null ? icon : ItemStack.EMPTY;
         this.icon = this.initialIcon;
         this.item = item;
+        this.editable = editable;
+        this.editHandler = editHandler;
+        this.provider = provider;
         
         String desc = description != null ? description.trim() : "";
         if (!desc.isEmpty()) {
@@ -107,6 +126,22 @@ public class SearchResult {
 
     public String getValue() {
         return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value != null ? value : "";
+    }
+
+    public boolean isEditable() {
+        return editable || editHandler != null;
+    }
+
+    public ResultEditHandler getEditHandler() {
+        return editHandler;
+    }
+
+    public SearchIndexProvider getProvider() {
+        return provider;
     }
 
     public String getModId() {
@@ -234,6 +269,9 @@ public class SearchResult {
         private ItemStack icon = ItemStack.EMPTY;
         private net.minecraft.world.item.Item item = null;
         private String description = "";
+        private boolean editable = false;
+        private ResultEditHandler editHandler = null;
+        private SearchIndexProvider provider = null;
 
         public Builder(SearchResultType type, String id, String title) {
             this.type = type;
@@ -276,8 +314,24 @@ public class SearchResult {
             return this;
         }
 
+        public Builder editable(boolean editable) {
+            this.editable = editable;
+            return this;
+        }
+
+        public Builder onEdit(ResultEditHandler editHandler) {
+            this.editHandler = editHandler;
+            this.editable = true;
+            return this;
+        }
+
+        public Builder provider(SearchIndexProvider provider) {
+            this.provider = provider;
+            return this;
+        }
+
         public SearchResult build() {
-            return new SearchResult(type, id, title, path, value, modId, modName, icon, item, description);
+            return new SearchResult(type, id, title, path, value, modId, modName, icon, item, description, editable, editHandler, provider);
         }
     }
 }

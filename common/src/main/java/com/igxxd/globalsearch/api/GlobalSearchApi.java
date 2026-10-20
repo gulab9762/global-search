@@ -85,6 +85,19 @@ public final class GlobalSearchApi {
     }
 
     /**
+     * Triggers the edit action for a given search result.
+     * Tries the result's custom edit handler first, then delegates to providers.
+     *
+     * @param result The search result to edit.
+     * @param screen The active screen.
+     * @param onValueChanged Callback to report the new display value.
+     * @return true if the edit was handled, false otherwise.
+     */
+    public static boolean triggerEdit(SearchResult result, Screen screen, java.util.function.Consumer<String> onValueChanged) {
+        return SearchIndexer.handleEdit(result, screen, onValueChanged);
+    }
+
+    /**
      * Opens the Global Search screen in the client.
      *
      * @param parent The parent screen to return to when closed.

@@ -33,6 +33,12 @@ public class GlobalSearchScreen extends Screen {
     private String copiedNotification = null;
     private long notificationExpiry = 0;
 
+    // Keybind inline listening state
+    private SearchResult listeningKeybindResult = null;
+    private net.minecraft.client.KeyMapping listeningKeyMapping = null;
+    private java.util.function.Consumer<String> listeningValueChanged = null;
+    private long listeningStartTime = 0;
+
     // Navigator panel layout bounds
     private int navX;
     private int navY;
@@ -134,13 +140,61 @@ public class GlobalSearchScreen extends Screen {
                 listHeight,
                 listY,
                 38,
-                this::copyResultValue
+                this::copyResultValue,
+                this::handleResultEdit,
+                res -> res != null && res == this.listeningKeybindResult
         );
         this.resultList.setX(listX);
         this.addRenderableWidget(this.resultList);
 
         // Populate initial filtered results
         updateFilter();
+    }
+
+    public void startListeningForKeybind(SearchResult result, net.minecraft.client.KeyMapping keyMapping, java.util.function.Consumer<String> onValueChanged) {
+        this.listeningKeybindResult = result;
+        this.listeningKeyMapping = keyMapping;
+        this.listeningValueChanged = onValueChanged;
+        this.listeningStartTime = System.currentTimeMillis();
+        this.copiedNotification = "Press any key to bind, or Esc to unbind...";
+        this.notificationExpiry = System.currentTimeMillis() + 10000;
+        if (this.resultList != null) {
+            this.resultList.refreshLayout();
+        }
+    }
+
+    public void cancelKeybindListening() {
+        this.listeningKeybindResult = null;
+        this.listeningKeyMapping = null;
+        this.listeningValueChanged = null;
+        this.copiedNotification = "Keybind change cancelled";
+        this.notificationExpiry = System.currentTimeMillis() + 2000;
+        if (this.resultList != null) {
+            this.resultList.refreshLayout();
+        }
+    }
+
+    private void handleResultEdit(SearchResult result) {
+        if (result == null || this.minecraft == null) return;
+
+        if (result == this.listeningKeybindResult) {
+            cancelKeybindListening();
+            return;
+        }
+
+        boolean edited = com.igxxd.globalsearch.api.GlobalSearchApi.triggerEdit(result, this, newVal -> {
+            if (this.resultList != null) {
+                this.resultList.refreshLayout();
+            }
+        });
+
+        if (edited && this.listeningKeybindResult == null) {
+            this.copiedNotification = "Updated " + result.getTitle() + " to [" + result.getValue() + "]";
+            this.notificationExpiry = System.currentTimeMillis() + 3000;
+            if (this.resultList != null) {
+                this.resultList.refreshLayout();
+            }
+        }
     }
 
     private Component getFilterButtonText(SearchResultType type) {
@@ -198,6 +252,36 @@ public class GlobalSearchScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (this.listeningKeyMapping != null) {
+            if (event.isEscape()) {
+                this.listeningKeyMapping.setKey(InputConstants.UNKNOWN);
+            } else {
+                this.listeningKeyMapping.setKey(InputConstants.getKey(event));
+            }
+            net.minecraft.client.KeyMapping.resetMapping();
+            if (this.minecraft != null && this.minecraft.options != null) {
+                this.minecraft.options.save();
+            }
+            String newKey = this.listeningKeyMapping.getTranslatedKeyMessage().getString();
+            if (this.listeningKeybindResult != null) {
+                this.listeningKeybindResult.setValue(newKey);
+            }
+            if (this.listeningValueChanged != null) {
+                this.listeningValueChanged.accept(newKey);
+            }
+            this.copiedNotification = "Rebound " + (this.listeningKeybindResult != null ? this.listeningKeybindResult.getTitle() : "Key") + " to [" + newKey + "]";
+            this.notificationExpiry = System.currentTimeMillis() + 3000;
+
+            this.listeningKeybindResult = null;
+            this.listeningKeyMapping = null;
+            this.listeningValueChanged = null;
+
+            if (this.resultList != null) {
+                this.resultList.refreshLayout();
+            }
+            return true;
+        }
+
         if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
@@ -205,12 +289,47 @@ public class GlobalSearchScreen extends Screen {
 
         if (event.key() == InputConstants.KEY_RETURN) {
             if (resultList != null && resultList.getSelected() != null) {
-                copyResultValue(resultList.getSelected().getResult());
+                SearchResult sel = resultList.getSelected().getResult();
+                if (sel != null && sel.isEditable()) {
+                    handleResultEdit(sel);
+                } else {
+                    copyResultValue(sel);
+                }
                 return true;
             }
         }
 
         return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.listeningKeyMapping != null && System.currentTimeMillis() - this.listeningStartTime > 150) {
+            this.listeningKeyMapping.setKey(InputConstants.Type.MOUSE.getOrCreate(event.button()));
+            net.minecraft.client.KeyMapping.resetMapping();
+            if (this.minecraft != null && this.minecraft.options != null) {
+                this.minecraft.options.save();
+            }
+            String newKey = this.listeningKeyMapping.getTranslatedKeyMessage().getString();
+            if (this.listeningKeybindResult != null) {
+                this.listeningKeybindResult.setValue(newKey);
+            }
+            if (this.listeningValueChanged != null) {
+                this.listeningValueChanged.accept(newKey);
+            }
+            this.copiedNotification = "Rebound " + (this.listeningKeybindResult != null ? this.listeningKeybindResult.getTitle() : "Key") + " to [" + newKey + "]";
+            this.notificationExpiry = System.currentTimeMillis() + 3000;
+
+            this.listeningKeybindResult = null;
+            this.listeningKeyMapping = null;
+            this.listeningValueChanged = null;
+
+            if (this.resultList != null) {
+                this.resultList.refreshLayout();
+            }
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
@@ -250,11 +369,16 @@ public class GlobalSearchScreen extends Screen {
 
         // Footer status / instructions
         int footerY = this.height - 14;
-        if (copiedNotification != null && System.currentTimeMillis() < notificationExpiry) {
-            String notification = "✓ Copied to clipboard: " + copiedNotification;
+        if (listeningKeybindResult != null) {
+            String listeningText = "▶ Press any key to bind to '" + listeningKeybindResult.getTitle() + "' • Esc to unbind • Click Edit again to cancel";
+            graphics.centeredText(this.font, Component.literal(listeningText).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD), this.width / 2, footerY, 0xFFFFFFFF);
+        } else if (copiedNotification != null && System.currentTimeMillis() < notificationExpiry) {
+            String notification = copiedNotification.startsWith("Rebound") || copiedNotification.startsWith("Updated") || copiedNotification.startsWith("Rescanned") || copiedNotification.startsWith("Keybind")
+                    ? "✓ " + copiedNotification
+                    : "✓ Copied to clipboard: " + copiedNotification;
             graphics.centeredText(this.font, Component.literal(notification).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), this.width / 2, footerY, 0xFFFFFFFF);
         } else {
-            String stats = "Showing " + filteredResults.size() + " of " + allIndexedResults.size() + " results • Press Enter or Click to copy • Esc to close";
+            String stats = "Showing " + filteredResults.size() + " of " + allIndexedResults.size() + " results • Click [Edit] to modify • Enter/Click to copy • Esc to close";
             graphics.centeredText(this.font, Component.literal(stats).withStyle(ChatFormatting.GRAY), this.width / 2, footerY, 0xFFFFFFFF);
         }
     }

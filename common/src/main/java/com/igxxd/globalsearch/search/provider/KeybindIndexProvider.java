@@ -68,18 +68,44 @@ public class KeybindIndexProvider implements SearchIndexProvider {
                     desc = "Keybind: " + title + " [" + boundKey + "] (" + path + ")";
                 }
 
-                results.add(new SearchResult(
-                        SearchResultType.KEYBIND,
-                        translationKey,
-                        title,
-                        path,
-                        boundKey,
-                        modId,
-                        modName,
-                        ItemStack.EMPTY,
-                        desc
-                ));
+                results.add(SearchResult.builder(SearchResultType.KEYBIND, translationKey, title)
+                        .path(path)
+                        .value(boundKey)
+                        .modId(modId)
+                        .modName(modName)
+                        .description(desc)
+                        .provider(this)
+                        .editable(true)
+                        .build());
             }
         }
+    }
+
+    @Override
+    public boolean handleEdit(Minecraft minecraft, SearchResult result, net.minecraft.client.gui.screens.Screen screen, java.util.function.Consumer<String> onValueChanged) {
+        if (minecraft.options == null) return false;
+        String translationKey = result.getId();
+        KeyMapping targetKm = null;
+        if (minecraft.options.keyMappings != null) {
+            for (KeyMapping km : minecraft.options.keyMappings) {
+                if (km != null && km.getName().equalsIgnoreCase(translationKey)) {
+                    targetKm = km;
+                    break;
+                }
+            }
+        }
+        if (targetKm == null) {
+            try {
+                targetKm = KeyMapping.get(translationKey);
+            } catch (Throwable ignored) {
+            }
+        }
+        if (targetKm == null) return false;
+
+        if (screen instanceof com.igxxd.globalsearch.gui.GlobalSearchScreen gss) {
+            gss.startListeningForKeybind(result, targetKm, onValueChanged);
+            return true;
+        }
+        return false;
     }
 }

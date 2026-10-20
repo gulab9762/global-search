@@ -70,4 +70,47 @@ public class SearchIndexer {
         CACHED_RESULTS = Collections.unmodifiableList(results);
         return CACHED_RESULTS;
     }
+
+    /**
+     * Delegates an edit action to the result's custom handler, its bound provider,
+     * or queries registered providers.
+     */
+    public static boolean handleEdit(SearchResult result, net.minecraft.client.gui.screens.Screen screen, java.util.function.Consumer<String> onValueChanged) {
+        if (result == null) return false;
+        Minecraft mc = Minecraft.getInstance();
+
+        // 1. Direct handler on SearchResult
+        if (result.getEditHandler() != null) {
+            try {
+                if (result.getEditHandler().handleEdit(mc, screen, onValueChanged)) {
+                    return true;
+                }
+            } catch (Throwable t) {
+                Constants.LOG.error("Error executing result edit handler: {}", t.getMessage());
+            }
+        }
+
+        // 2. Bound provider on SearchResult
+        if (result.getProvider() != null) {
+            try {
+                if (result.getProvider().handleEdit(mc, result, screen, onValueChanged)) {
+                    return true;
+                }
+            } catch (Throwable t) {
+                Constants.LOG.error("Error in provider '{}' edit handler: {}", result.getProvider().getName(), t.getMessage());
+            }
+        }
+
+        // 3. Fallback across all registered providers
+        for (SearchIndexProvider provider : PROVIDERS) {
+            try {
+                if (provider.handleEdit(mc, result, screen, onValueChanged)) {
+                    return true;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
+        return false;
+    }
 }

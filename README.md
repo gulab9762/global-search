@@ -185,10 +185,67 @@ public class MyGuiHelper {
 
 ---
 
-### 6. Best Practices for Mod Integrations
+### 6. Supporting Inline Editing in Your Mod
+
+Global Search allows players to edit settings and keybinds directly from search results with an inline `[Edit]` button and clickable value. Mod developers can make their custom entries editable through two easy ways:
+
+#### Option A: Direct Callback on `SearchResult`
+
+```java
+results.add(SearchResult.builder(MY_CATEGORY, "sound_effect", "Sound Effects")
+    .value("ON")
+    .onEdit((minecraft, screen, onValueChanged) -> {
+        boolean newState = MyConfig.toggleSound();
+        String display = newState ? "ON" : "OFF";
+        onValueChanged.accept(display); // Updates the UI row instantly
+        return true; // handled
+    })
+    .build());
+```
+
+#### Option B: Implementing `handleEdit` on `SearchIndexProvider`
+
+```java
+public class MyIndexProvider implements SearchIndexProvider {
+    @Override
+    public String getName() { return "My Mod Config"; }
+
+    @Override
+    public void index(Minecraft mc, List<SearchResult> results, Set<String> seenKeys) {
+        results.add(SearchResult.builder(MY_CATEGORY, "volume", "Master Music")
+            .value("50%")
+            .provider(this) // bind provider
+            .editable(true)  // mark as editable
+            .build());
+    }
+
+    @Override
+    public boolean handleEdit(Minecraft mc, SearchResult result, Screen screen, Consumer<String> onValueChanged) {
+        if ("volume".equals(result.getId())) {
+            int next = (MyConfig.getVolume() + 10) % 110;
+            MyConfig.setVolume(next);
+            onValueChanged.accept(next + "%");
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+You can also trigger editing programmatically on any `SearchResult`:
+```java
+GlobalSearchApi.triggerEdit(result, screen, (newValue) -> {
+    System.out.println("Result updated to: " + newValue);
+});
+```
+
+---
+
+### 7. Best Practices for Mod Integrations
 
 1. **Client-Only Registration**: Always register search providers and categories in client initialization code; the UI and indexing are client-side.
 2. **Deduplication**: Always check `if (seenKeys.add(key))` before adding results to avoid duplicates across scans.
 3. **Responsive Descriptions**: Provide clear, helpful descriptions. If you use translation keys, Global Search automatically resolves them using `Language.getInstance()`.
 4. **Icons**: Supply recognizable in-game `ItemStack` icons for entries to ensure an authentic visual experience.
+5. **Fast Non-Blocking Edits**: When implementing inline edits, keep execution fast (e.g. toggling a boolean or cycling options) and call `onValueChanged.accept(newValue)` to provide instantaneous visual feedback to the player.
 
