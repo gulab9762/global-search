@@ -2,6 +2,7 @@ package com.igxxd.globalsearch.gui;
 
 import com.igxxd.globalsearch.search.SearchResult;
 import com.igxxd.globalsearch.search.SearchResultType;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -10,6 +11,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class SearchResultList extends ObjectSelectionList<SearchResultList.ResultEntry> {
@@ -67,10 +69,32 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             this.expanded = !this.expanded;
             if (this.expanded) {
                 int contentWidth = Math.max(this.getWidth() - 70, 100);
-                String desc = result.getDescription();
-                var lines = font.split(Component.literal(desc), contentWidth);
-                int lineCount = Math.max(1, lines.size());
-                this.setHeight(52 + lineCount * 11 + 6);
+                int h = 38 + 6; // header + divider
+
+                // Line 1: Type & Mod
+                h += 12;
+
+                // Line 2: Full Path
+                if (!result.getPath().isEmpty()) {
+                    var pathLines = font.split(Component.literal("Path: " + result.getPath()), contentWidth);
+                    h += Math.max(1, pathLines.size()) * 11;
+                }
+
+                // Line 3: ID (if distinct from path and non-empty)
+                if (!result.getId().isEmpty() && !result.getId().equals(result.getPath())) {
+                    h += 12;
+                }
+
+                // Line 4: Description / Info
+                if (!result.getDescription().isEmpty()) {
+                    var descLines = font.split(Component.literal(result.getDescription()), contentWidth);
+                    h += 12 + Math.max(1, descLines.size()) * 11;
+                }
+
+                // Line 5: Copy prompt + bottom padding
+                h += 14 + 6;
+
+                this.setHeight(h);
             } else {
                 this.setHeight(38);
             }
@@ -135,7 +159,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 }
             }
 
-            // 4. Line 2: Mod Name + Path / Category
+            // 4. Line 2: Mod Name + Path / Category (collapsed preview)
             int line2Y = y + 19;
             String modText = "Mod: " + result.getModName();
             graphics.text(font, modText, curX, line2Y, 0xFF77A3FF);
@@ -150,33 +174,68 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 graphics.text(font, displayPath, pathStartX, line2Y, 0xFFAAAAAA);
             }
 
-            // 5. Expand / Collapse Button
+            // 5. Expand / Collapse Button (+ / -)
             graphics.fill(expandBtnX, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, isBtnHovered ? 0x44FFFFFF : 0x1AFFFFFF);
-            String arrow = expanded ? "▲" : "▼";
-            graphics.centeredText(font, arrow, expandBtnX + (expandBtnSize / 2), expandBtnY + (expandBtnSize - 9) / 2, isBtnHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
+            String symbol = expanded ? "-" : "+";
+            graphics.centeredText(font, symbol, expandBtnX + (expandBtnSize / 2), expandBtnY + (expandBtnSize - 9) / 2, isBtnHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
 
-            // 6. Expanded Description Area
+            // 6. Expanded Full Details Area (moved from hover tooltip into row)
             if (expanded) {
-                int dividerY = y + 36;
-                graphics.fill(curX, dividerY, expandBtnX + expandBtnSize, dividerY + 1, 0x33FFFFFF);
+                int contentWidth = Math.max((expandBtnX + expandBtnSize) - curX, 100);
+                int curY = y + 36;
 
-                int descLabelY = dividerY + 5;
-                graphics.text(font, "Description:", curX, descLabelY, 0xFFFFAA00);
+                // Divider line
+                graphics.fill(curX, curY, expandBtnX + expandBtnSize, curY + 1, 0x33FFFFFF);
+                curY += 6;
 
-                int descWidth = Math.max((expandBtnX + expandBtnSize) - curX, 100);
-                var lines = font.split(Component.literal(result.getDescription()), descWidth);
-                int lineY = descLabelY + 12;
-                for (var line : lines) {
-                    graphics.text(font, line, curX, lineY, 0xFFE0E0E0);
-                    lineY += 11;
+                // Detail 1: Type and Mod ID
+                Component typeAndMod = Component.literal("Type: ").withStyle(ChatFormatting.DARK_GRAY)
+                        .append(Component.literal(type.getLabel()).withStyle(ChatFormatting.YELLOW))
+                        .append(Component.literal("  •  Mod: ").withStyle(ChatFormatting.DARK_GRAY))
+                        .append(Component.literal(result.getModName()).withStyle(ChatFormatting.AQUA))
+                        .append(Component.literal(" (" + result.getModId() + ")").withStyle(ChatFormatting.DARK_GRAY));
+                graphics.text(font, typeAndMod, curX, curY, 0xFFFFFFFF);
+                curY += 12;
+
+                // Detail 2: Full Path
+                if (!result.getPath().isEmpty()) {
+                    Component pathComp = Component.literal("Path: ").withStyle(ChatFormatting.GRAY)
+                            .append(Component.literal(result.getPath()).withStyle(ChatFormatting.WHITE));
+                    var pathLines = font.split(pathComp, contentWidth);
+                    for (var pline : pathLines) {
+                        graphics.text(font, pline, curX, curY, 0xFFCCCCCC);
+                        curY += 11;
+                    }
                 }
+
+                // Detail 3: ID (if distinct)
+                if (!result.getId().isEmpty() && !result.getId().equals(result.getPath())) {
+                    Component idComp = Component.literal("ID: ").withStyle(ChatFormatting.DARK_GRAY)
+                            .append(Component.literal(result.getId()).withStyle(ChatFormatting.DARK_AQUA));
+                    graphics.text(font, idComp, curX, curY, 0xFF88DDAA);
+                    curY += 12;
+                }
+
+                // Detail 4: Description / Info
+                if (!result.getDescription().isEmpty()) {
+                    graphics.text(font, Component.literal("Description:").withStyle(ChatFormatting.GOLD), curX, curY, 0xFFFFAA00);
+                    curY += 11;
+                    var descLines = font.split(Component.literal(result.getDescription()), contentWidth);
+                    for (var dline : descLines) {
+                        graphics.text(font, dline, curX, curY, 0xFFE0E0E0);
+                        curY += 11;
+                    }
+                }
+
+                // Detail 5: Clipboard copy hint
+                graphics.text(font, Component.literal("[ Click card to copy value to clipboard ]").withStyle(ChatFormatting.DARK_GREEN, ChatFormatting.ITALIC), curX, curY + 2, 0xFF55FF55);
             }
 
-            // Tooltips
+            // Minimal, clean on-hover tooltips (no intrusive gigantic popup)
             if (isBtnHovered) {
-                graphics.setComponentTooltipForNextFrame(font, java.util.List.of(Component.literal(expanded ? "Collapse description" : "Expand description")), mouseX, mouseY);
+                graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(expanded ? "Collapse details" : "Expand details")), mouseX, mouseY);
             } else if (isHovered) {
-                graphics.setComponentTooltipForNextFrame(font, result.getTooltip(), mouseX, mouseY);
+                graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to copy value to clipboard").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)), mouseX, mouseY);
             }
         }
 
