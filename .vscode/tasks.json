@@ -1,0 +1,120 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Minecraft: Run Fabric Client",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": [
+                ":fabric:runClient"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "Minecraft: Run NeoForge Client",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": [
+                ":neoforge:runClient"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "group": "test",
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "Minecraft: Build All",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": [
+                "buildAllMods"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Minecraft: Run Tests",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": [
+                "test"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Minecraft: Build and Deploy to MultiMC",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": [
+                "buildAndDeploy"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Minecraft: Deploy Fabric to MultiMC",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": [
+                "deployFabricToMultiMC"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Minecraft: Deploy NeoForge to MultiMC",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": [
+                "deployNeoForgeToMultiMC"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}

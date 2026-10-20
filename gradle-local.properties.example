@@ -1,0 +1,3 @@
+# Copy this file to gradle-local.properties and set your local MultiMC instance mods directory
+# multimcModsDir=C:/MultiMC/instances/26.3/.minecraft/mods
+multimcModsDir=C:/REPLACE_WITH_YOUR_INSTANCE_PATH/mods

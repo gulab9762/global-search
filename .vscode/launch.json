@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "neoforge - Client",
+      "presentation": {
+        "group": "Mod Development - neoforge",
+        "order": 0
+      },
+      "projectName": "neoforge",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\Gulab\\IdeaProjects\\global-search\\neoforge\\build\\moddev\\clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\Gulab\\IdeaProjects\\global-search\\neoforge\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dglobalsearch%%C:\\Users\\Gulab\\IdeaProjects\\global-search\\neoforge\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\neoforge\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "neoforge - Server",
+      "presentation": {
+        "group": "Mod Development - neoforge",
+        "order": 1
+      },
+      "projectName": "neoforge",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@C:\\Users\\Gulab\\IdeaProjects\\global-search\\neoforge\\build\\moddev\\serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@C:\\Users\\Gulab\\IdeaProjects\\global-search\\neoforge\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dglobalsearch%%C:\\Users\\Gulab\\IdeaProjects\\global-search\\neoforge\\bin\\main"
+      ],
+      "cwd": "${workspaceFolder}\\neoforge\\run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    }
+  ]
+}
