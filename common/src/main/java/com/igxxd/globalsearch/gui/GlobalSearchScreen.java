@@ -94,22 +94,12 @@ public class GlobalSearchScreen extends Screen {
         int listHeight = navHeight;
 
         // 4. Left Navigator Buttons (Vertical Stack)
-        SearchResultType[] filterTypes = new SearchResultType[]{
-                SearchResultType.ALL,
-                SearchResultType.KEYBIND,
-                SearchResultType.SETTING,
-                SearchResultType.ITEM,
-                SearchResultType.ENCHANTMENT,
-                SearchResultType.POTION,
-                SearchResultType.BIOME,
-                SearchResultType.DIMENSION,
-                SearchResultType.MOD
-        };
+        List<SearchResultType> filterTypes = SearchResultType.getAllCategories();
 
         int btnWidth = navWidth - 8;
-        int totalItems = filterTypes.length + (this.currentFilter == SearchResultType.KEYBIND ? 1 : 0);
+        int totalItems = filterTypes.size() + (this.currentFilter.equals(SearchResultType.KEYBIND) ? 1 : 0);
         int availableH = navHeight - 20;
-        int btnHeight = Math.max(16, Math.min(20, (availableH - (totalItems * 2)) / totalItems));
+        int btnHeight = Math.max(16, Math.min(20, (availableH - (totalItems * 2)) / Math.max(1, totalItems)));
         int spacing = Math.max(1, Math.min(3, (availableH - (totalItems * btnHeight)) / Math.max(1, totalItems)));
         int btnY = navY + 18;
 
@@ -123,7 +113,7 @@ public class GlobalSearchScreen extends Screen {
             btnY += btnHeight + spacing;
 
             // If KEYBIND filter is active, add "By Key Value" Checkbox option underneath
-            if (type == SearchResultType.KEYBIND && this.currentFilter == SearchResultType.KEYBIND) {
+            if (type.equals(SearchResultType.KEYBIND) && this.currentFilter.equals(SearchResultType.KEYBIND)) {
                 Checkbox keyValCheckbox = Checkbox.builder(Component.literal("By Key Value"), this.font)
                         .pos(navX + 6, btnY)
                         .selected(this.searchByKeyValue)
@@ -154,7 +144,7 @@ public class GlobalSearchScreen extends Screen {
     }
 
     private Component getFilterButtonText(SearchResultType type) {
-        boolean active = this.currentFilter == type;
+        boolean active = this.currentFilter.equals(type);
         ChatFormatting color = active ? ChatFormatting.YELLOW : ChatFormatting.GRAY;
         String prefix = active ? "▶ " : "  ";
         return Component.literal(prefix + type.getLabel()).withStyle(color);
@@ -166,12 +156,12 @@ public class GlobalSearchScreen extends Screen {
         String[] tokens = query.isEmpty() ? new String[0] : query.split("\\s+");
 
         for (SearchResult result : allIndexedResults) {
-            if (currentFilter != SearchResultType.ALL && result.getType() != currentFilter) {
+            if (!currentFilter.equals(SearchResultType.ALL) && !result.getType().equals(currentFilter)) {
                 continue;
             }
 
             // Keybind specific: search by key value if checkbox is enabled
-            if (currentFilter == SearchResultType.KEYBIND && searchByKeyValue) {
+            if (currentFilter.equals(SearchResultType.KEYBIND) && searchByKeyValue) {
                 if (result.matchesKeyValue(tokens)) {
                     filteredResults.add(result);
                 }

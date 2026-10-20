@@ -194,4 +194,66 @@ public class SearchResult {
         tooltip.add(Component.literal("Click to copy value to clipboard").withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
         return tooltip;
     }
+
+    public static Builder builder(SearchResultType type, String id, String title) {
+        return new Builder(type, id, title);
+    }
+
+    public static class Builder {
+        private final SearchResultType type;
+        private final String id;
+        private final String title;
+        private String path = "";
+        private String value = "";
+        private String modId = "minecraft";
+        private String modName = "Minecraft";
+        private ItemStack icon = ItemStack.EMPTY;
+        private net.minecraft.world.item.Item item = null;
+        private String description = "";
+
+        public Builder(SearchResultType type, String id, String title) {
+            this.type = type;
+            this.id = id;
+            this.title = title;
+        }
+
+        public Builder path(String path) {
+            this.path = path;
+            return this;
+        }
+
+        public Builder value(String value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder modId(String modId) {
+            this.modId = modId;
+            return this;
+        }
+
+        public Builder modName(String modName) {
+            this.modName = modName;
+            return this;
+        }
+
+        public Builder icon(ItemStack icon) {
+            this.icon = icon;
+            return this;
+        }
+
+        public Builder item(net.minecraft.world.item.Item item) {
+            this.item = item;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public SearchResult build() {
+            return new SearchResult(type, id, title, path, value, modId, modName, icon, item, description);
+        }
+    }
 }

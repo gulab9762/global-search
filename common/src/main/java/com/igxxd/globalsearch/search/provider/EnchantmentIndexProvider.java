@@ -52,8 +52,22 @@ public class EnchantmentIndexProvider implements SearchIndexProvider {
                                 .collect(Collectors.joining(" "));
 
                         String descKey = "enchantment." + id.getNamespace() + "." + id.getPath() + ".desc";
+                        String altDescKey = "description.enchantment." + id.getNamespace() + "." + id.getPath();
                         Language lang = Language.getInstance();
-                        String desc = lang.has(descKey) ? lang.getOrDefault(descKey) : "";
+                        String desc = "";
+                        if (lang.has(descKey)) {
+                            desc = lang.getOrDefault(descKey);
+                        } else if (lang.has(altDescKey)) {
+                            desc = lang.getOrDefault(altDescKey);
+                        }
+
+                        if (desc.isEmpty() && "minecraft".equalsIgnoreCase(id.getNamespace())) {
+                            String vanillaDesc = VanillaEnchantmentDescriptions.getDescription(id.getPath());
+                            if (vanillaDesc != null) {
+                                desc = vanillaDesc;
+                            }
+                        }
+
                         if (desc.isEmpty()) {
                             desc = "Enchantment (Max Lvl " + maxLvl + ")";
                         }
