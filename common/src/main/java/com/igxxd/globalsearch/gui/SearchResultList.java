@@ -29,8 +29,27 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
     }
 
     @Override
+    public int getRowLeft() {
+        return this.getX() + 4;
+    }
+
+    @Override
     public int getRowWidth() {
-        return Math.max(this.width - 16, 180);
+        return Math.max(this.width - 20, 180);
+    }
+
+    @Override
+    protected int scrollBarX() {
+        return this.getX() + this.width - 8;
+    }
+
+    @Override
+    protected boolean isOverScrollbar(double mouseX, double mouseY) {
+        return this.scrollable()
+                && mouseX >= this.getX() + this.width - 14
+                && mouseX <= this.getX() + this.width
+                && mouseY >= this.getY()
+                && mouseY <= this.getBottom();
     }
 
     public void setResults(Collection<SearchResult> results) {
@@ -91,8 +110,8 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                     h += 12 + Math.max(1, descLines.size()) * 11;
                 }
 
-                // Line 5: Copy prompt + bottom padding
-                h += 14 + 6;
+                // Bottom padding
+                h += 6;
 
                 this.setHeight(h);
             } else {
@@ -226,16 +245,11 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                         curY += 11;
                     }
                 }
-
-                // Detail 5: Clipboard copy hint
-                graphics.text(font, Component.literal("[ Click card to copy value to clipboard ]").withStyle(ChatFormatting.DARK_GREEN, ChatFormatting.ITALIC), curX, curY + 2, 0xFF55FF55);
             }
 
-            // Minimal, clean on-hover tooltips (no intrusive gigantic popup)
+            // Minimal, clean on-hover tooltips (only for the expand button)
             if (isBtnHovered) {
                 graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(expanded ? "Collapse details" : "Expand details")), mouseX, mouseY);
-            } else if (isHovered) {
-                graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal("Click to copy value to clipboard").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)), mouseX, mouseY);
             }
         }
 

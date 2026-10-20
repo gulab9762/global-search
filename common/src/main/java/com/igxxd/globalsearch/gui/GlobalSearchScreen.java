@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -200,6 +201,22 @@ public class GlobalSearchScreen extends Screen {
         }
 
         return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (this.resultList != null && this.resultList.mouseDragged(event, dx, dy)) {
+            return true;
+        }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (this.resultList != null && this.resultList.mouseReleased(event)) {
+            return true;
+        }
+        return super.mouseReleased(event);
     }
 
     @Override

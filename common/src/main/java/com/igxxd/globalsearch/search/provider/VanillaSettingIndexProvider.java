@@ -5,9 +5,12 @@ import com.igxxd.globalsearch.search.SearchResultType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Locale;
@@ -25,28 +28,28 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         Options options = minecraft.options;
         if (options == null) return;
 
-        // Core known options with exact end-to-end paths
-        addSetting(results, seenKeys, "Field of View (FOV)", "Options > Video Settings", String.valueOf(options.fov().get()));
-        addSetting(results, seenKeys, "Brightness", "Options > Video Settings", String.format(Locale.ROOT, "%.0f%%", options.gamma().get() * 100));
-        addSetting(results, seenKeys, "Render Distance", "Options > Video Settings", options.getEffectiveRenderDistance() + " chunks");
-        addSetting(results, seenKeys, "Simulation Distance", "Options > Video Settings", options.simulationDistance().get() + " chunks");
-        addSetting(results, seenKeys, "GUI Scale", "Options > Video Settings", options.guiScale().get() == 0 ? "Auto" : String.valueOf(options.guiScale().get()));
-        addSetting(results, seenKeys, "Max Framerate", "Options > Video Settings", options.framerateLimit().get() >= 260 ? "Unlimited" : options.framerateLimit().get() + " fps");
-        addSetting(results, seenKeys, "VSync", "Options > Video Settings", options.enableVsync().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Fullscreen", "Options > Video Settings", options.fullscreen().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "View Bobbing", "Options > Video Settings", options.bobView().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Auto-Jump", "Options > Controls", options.autoJump().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Mouse Sensitivity", "Options > Controls > Mouse Settings", String.format(Locale.ROOT, "%.0f%%", options.sensitivity().get() * 100));
-        addSetting(results, seenKeys, "Invert Mouse", "Options > Controls > Mouse Settings", options.invertMouseY().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Particles", "Options > Video Settings", String.valueOf(options.particles().get()));
-        addSetting(results, seenKeys, "High Contrast", "Options > Accessibility Settings", options.highContrast().get() ? "ON" : "OFF");
-        addSetting(results, seenKeys, "Show Subtitles", "Options > Music & Sounds", options.showSubtitles().get() ? "ON" : "OFF");
+        // Core known options with exact end-to-end paths and option keys
+        addSetting(results, seenKeys, "Field of View (FOV)", "Options > Video Settings", String.valueOf(options.fov().get()), "options.fov");
+        addSetting(results, seenKeys, "Brightness", "Options > Video Settings", String.format(Locale.ROOT, "%.0f%%", options.gamma().get() * 100), "options.gamma");
+        addSetting(results, seenKeys, "Render Distance", "Options > Video Settings", options.getEffectiveRenderDistance() + " chunks", "options.renderDistance");
+        addSetting(results, seenKeys, "Simulation Distance", "Options > Video Settings", options.simulationDistance().get() + " chunks", "options.simulationDistance");
+        addSetting(results, seenKeys, "GUI Scale", "Options > Video Settings", options.guiScale().get() == 0 ? "Auto" : String.valueOf(options.guiScale().get()), "options.guiScale");
+        addSetting(results, seenKeys, "Max Framerate", "Options > Video Settings", options.framerateLimit().get() >= 260 ? "Unlimited" : options.framerateLimit().get() + " fps", "options.framerateLimit");
+        addSetting(results, seenKeys, "VSync", "Options > Video Settings", options.enableVsync().get() ? "ON" : "OFF", "options.enableVsync");
+        addSetting(results, seenKeys, "Fullscreen", "Options > Video Settings", options.fullscreen().get() ? "ON" : "OFF", "options.fullscreen");
+        addSetting(results, seenKeys, "View Bobbing", "Options > Video Settings", options.bobView().get() ? "ON" : "OFF", "options.bobView");
+        addSetting(results, seenKeys, "Auto-Jump", "Options > Controls", options.autoJump().get() ? "ON" : "OFF", "options.autoJump");
+        addSetting(results, seenKeys, "Mouse Sensitivity", "Options > Controls > Mouse Settings", String.format(Locale.ROOT, "%.0f%%", options.sensitivity().get() * 100), "options.sensitivity");
+        addSetting(results, seenKeys, "Invert Mouse", "Options > Controls > Mouse Settings", options.invertMouseY().get() ? "ON" : "OFF", "options.invertMouse");
+        addSetting(results, seenKeys, "Particles", "Options > Video Settings", String.valueOf(options.particles().get()), "options.particles");
+        addSetting(results, seenKeys, "High Contrast", "Options > Accessibility Settings", options.highContrast().get() ? "ON" : "OFF", "options.accessibility.high_contrast");
+        addSetting(results, seenKeys, "Show Subtitles", "Options > Music & Sounds", options.showSubtitles().get() ? "ON" : "OFF", "options.showSubtitles");
 
         // Sound sources with full path
         for (SoundSource source : SoundSource.values()) {
             String name = ProviderUtils.formatCamelCase(source.getName()) + " Volume";
             String value = String.format(Locale.ROOT, "%.0f%%", options.getSoundSourceVolume(source) * 100);
-            addSetting(results, seenKeys, name, "Options > Music & Sounds", value);
+            addSetting(results, seenKeys, name, "Options > Music & Sounds", value, "soundCategory." + source.getName());
         }
 
         // Introspect other OptionInstance methods
@@ -58,7 +61,19 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     OptionInstance<?> instance = (OptionInstance<?>) method.invoke(options);
                     if (instance != null && instance.get() != null) {
                         String path = getVanillaOptionPath(methodName);
-                        addSetting(results, seenKeys, readableName, path, String.valueOf(instance.get()));
+                        String transKey = null;
+                        try {
+                            Field captionField = OptionInstance.class.getDeclaredField("caption");
+                            captionField.setAccessible(true);
+                            Component caption = (Component) captionField.get(instance);
+                            if (caption != null) {
+                                readableName = caption.getString();
+                                if (caption.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc) {
+                                    transKey = tc.getKey();
+                                }
+                            }
+                        } catch (Throwable ignored) {}
+                        addSetting(results, seenKeys, readableName, path, String.valueOf(instance.get()), transKey);
                     }
                 } catch (Exception ignored) {
                 }
@@ -104,10 +119,29 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         return "Options > Miscellaneous";
     }
 
-    private void addSetting(List<SearchResult> results, Set<String> seenKeys, String title, String path, String value) {
+    private void addSetting(List<SearchResult> results, Set<String> seenKeys, String title, String path, String value, String transKey) {
         String id = "setting:" + title.toLowerCase(Locale.ROOT).replace(' ', '_');
         String key = SearchResultType.SETTING.name() + ":" + id;
         if (seenKeys.add(key)) {
+            String desc = "";
+            Language lang = Language.getInstance();
+            if (transKey != null && !transKey.isEmpty()) {
+                if (lang.has(transKey + ".tooltip")) {
+                    desc = lang.getOrDefault(transKey + ".tooltip");
+                } else if (lang.has(transKey + ".desc")) {
+                    desc = lang.getOrDefault(transKey + ".desc");
+                }
+            }
+            if (desc.isEmpty()) {
+                String fallbackKey = "options." + title.toLowerCase(Locale.ROOT).replace(' ', '_') + ".tooltip";
+                if (lang.has(fallbackKey)) {
+                    desc = lang.getOrDefault(fallbackKey);
+                }
+            }
+            if (desc.isEmpty()) {
+                desc = "Vanilla Setting (" + path + ")";
+            }
+
             results.add(new SearchResult(
                     SearchResultType.SETTING,
                     id,
@@ -117,7 +151,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     "minecraft",
                     "Minecraft",
                     ItemStack.EMPTY,
-                    "Vanilla Setting (" + path + ")"
+                    desc
             ));
         }
     }

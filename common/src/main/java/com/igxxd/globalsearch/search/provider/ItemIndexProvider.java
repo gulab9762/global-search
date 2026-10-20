@@ -36,6 +36,19 @@ public class ItemIndexProvider implements SearchIndexProvider {
                 String key = SearchResultType.ITEM.name() + ":" + path.toLowerCase(Locale.ROOT);
 
                 if (seenKeys.add(key)) {
+                    String desc = "";
+                    net.minecraft.locale.Language lang = net.minecraft.locale.Language.getInstance();
+                    if (lang.has(descId + ".desc")) {
+                        desc = lang.getOrDefault(descId + ".desc");
+                    } else if (lang.has(descId + ".description")) {
+                        desc = lang.getOrDefault(descId + ".description");
+                    } else if (lang.has(descId + ".tooltip")) {
+                        desc = lang.getOrDefault(descId + ".tooltip");
+                    }
+                    if (desc.isEmpty()) {
+                        desc = "Item: " + title + " (" + path + ")";
+                    }
+
                     results.add(new SearchResult(
                             SearchResultType.ITEM,
                             path,
@@ -45,7 +58,7 @@ public class ItemIndexProvider implements SearchIndexProvider {
                             modId,
                             modName,
                             item,
-                            "Item: " + title + " (" + path + ")"
+                            desc
                     ));
                 }
             } catch (Throwable ignored) {

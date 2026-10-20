@@ -85,6 +85,21 @@ public class XaeroConfigIndexProvider implements SearchIndexProvider {
                     String uniqueKey = SearchResultType.SETTING.name() + ":" + modId + ":" + id.toLowerCase(Locale.ROOT);
 
                     if (seenKeys.add(uniqueKey)) {
+                        String desc = tooltip;
+                        if (desc.isEmpty() && transKey != null) {
+                            net.minecraft.locale.Language lang = net.minecraft.locale.Language.getInstance();
+                            if (lang.has(transKey + ".tooltip")) {
+                                desc = lang.getOrDefault(transKey + ".tooltip");
+                            } else if (lang.has(transKey + "_tooltip")) {
+                                desc = lang.getOrDefault(transKey + "_tooltip");
+                            } else if (lang.has(transKey + ".desc")) {
+                                desc = lang.getOrDefault(transKey + ".desc");
+                            }
+                        }
+                        if (desc.isEmpty()) {
+                            desc = title + " (" + fullPath + ")";
+                        }
+
                         results.add(new SearchResult(
                                 SearchResultType.SETTING,
                                 modId + ":setting:" + id,
@@ -94,7 +109,7 @@ public class XaeroConfigIndexProvider implements SearchIndexProvider {
                                 modId,
                                 modName,
                                 ItemStack.EMPTY,
-                                tooltip.isEmpty() ? (title + " (" + fullPath + ")") : tooltip
+                                desc
                         ));
                     }
                 } catch (Throwable ignored) {}

@@ -55,6 +55,19 @@ public class KeybindIndexProvider implements SearchIndexProvider {
             String key = SearchResultType.KEYBIND.name() + ":" + translationKey.toLowerCase(Locale.ROOT);
 
             if (seenKeys.add(key)) {
+                String desc = "";
+                net.minecraft.locale.Language lang = net.minecraft.locale.Language.getInstance();
+                if (lang.has(translationKey + ".desc")) {
+                    desc = lang.getOrDefault(translationKey + ".desc");
+                } else if (lang.has(translationKey + ".description")) {
+                    desc = lang.getOrDefault(translationKey + ".description");
+                } else if (lang.has(translationKey + ".tooltip")) {
+                    desc = lang.getOrDefault(translationKey + ".tooltip");
+                }
+                if (desc.isEmpty()) {
+                    desc = "Keybind: " + title + " [" + boundKey + "] (" + path + ")";
+                }
+
                 results.add(new SearchResult(
                         SearchResultType.KEYBIND,
                         translationKey,
@@ -64,7 +77,7 @@ public class KeybindIndexProvider implements SearchIndexProvider {
                         modId,
                         modName,
                         ItemStack.EMPTY,
-                        "Keybind for " + title
+                        desc
                 ));
             }
         }

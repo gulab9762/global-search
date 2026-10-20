@@ -58,6 +58,24 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
 
                                 String key = SearchResultType.SETTING.name() + ":" + id.toLowerCase(Locale.ROOT);
                                 if (seenKeys.add(key)) {
+                                    String desc = "";
+                                    net.minecraft.locale.Language lang = net.minecraft.locale.Language.getInstance();
+                                    String[] candTooltipKeys = new String[]{
+                                            "text.autoconfig." + modId + ".option." + fieldName + ".@Tooltip",
+                                            "text.autoconfig." + modId + ".option." + fieldName + ".tooltip",
+                                            "text.autoconfig." + modId + ".option." + fieldName + ".desc",
+                                            modId + ".config." + fieldName + ".tooltip"
+                                    };
+                                    for (String candKey : candTooltipKeys) {
+                                        if (lang.has(candKey)) {
+                                            desc = lang.getOrDefault(candKey);
+                                            break;
+                                        }
+                                    }
+                                    if (desc.isEmpty()) {
+                                        desc = "Cloth Config setting for " + modName;
+                                    }
+
                                     results.add(new SearchResult(
                                             SearchResultType.SETTING,
                                             id,
@@ -67,7 +85,7 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
                                             modId,
                                             modName,
                                             ItemStack.EMPTY,
-                                            "Cloth Config setting for " + modName
+                                            desc
                                     ));
                                 }
                             }

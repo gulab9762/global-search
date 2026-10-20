@@ -64,6 +64,25 @@ public class NeoForgeConfigIndexProvider implements SearchIndexProvider {
                                         String id = modId + ":neoforge:" + pathKey;
                                         String key = SearchResultType.SETTING.name() + ":" + id.toLowerCase(Locale.ROOT);
                                         if (seenKeys.add(key)) {
+                                            String desc = "";
+                                            net.minecraft.locale.Language lang = net.minecraft.locale.Language.getInstance();
+                                            String[] candidates = new String[]{
+                                                    modId + ".config." + pathKey + ".tooltip",
+                                                    modId + ".config." + pathKey + ".desc",
+                                                    modId + ".config." + pathKey,
+                                                    modId + "." + pathKey + ".tooltip",
+                                                    modId + "." + pathKey
+                                            };
+                                            for (String cand : candidates) {
+                                                if (lang.has(cand)) {
+                                                    desc = lang.getOrDefault(cand);
+                                                    break;
+                                                }
+                                            }
+                                            if (desc.isEmpty()) {
+                                                desc = "NeoForge Config (" + pathKey + ")";
+                                            }
+
                                             results.add(new SearchResult(
                                                     SearchResultType.SETTING,
                                                     id,
@@ -73,7 +92,7 @@ public class NeoForgeConfigIndexProvider implements SearchIndexProvider {
                                                     modId,
                                                     modName,
                                                     ItemStack.EMPTY,
-                                                    "NeoForge Config (" + pathKey + ")"
+                                                    desc
                                             ));
                                         }
                                     }

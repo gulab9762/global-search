@@ -48,6 +48,17 @@ public class SearchResult {
         this.item = item;
         
         String desc = description != null ? description.trim() : "";
+        if (!desc.isEmpty()) {
+            net.minecraft.locale.Language lang = net.minecraft.locale.Language.getInstance();
+            if (lang.has(desc)) {
+                desc = lang.getOrDefault(desc);
+            } else if (desc.contains(".")) {
+                String translated = Component.translatable(desc).getString();
+                if (!translated.equals(desc) && !translated.isEmpty()) {
+                    desc = translated;
+                }
+            }
+        }
         if (desc.isEmpty()) {
             if (!this.path.isEmpty()) {
                 desc = this.title + " (" + this.path + ")";
@@ -58,7 +69,7 @@ public class SearchResult {
         this.description = desc;
 
         // Pre-compute lower-case search target for fast substring and multi-word matching
-        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + this.description + " " + type.name())
+        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + this.description.replace('\n', ' ') + " " + type.name())
                 .toLowerCase(Locale.ROOT);
     }
 

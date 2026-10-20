@@ -5,6 +5,7 @@ import com.igxxd.globalsearch.platform.Services;
 import com.igxxd.globalsearch.search.SearchResult;
 import com.igxxd.globalsearch.search.SearchResultType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
@@ -189,6 +190,16 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
                 Object c = getCommentM.invoke(hk);
                 if (c instanceof String s) comment = s;
             } catch (Throwable ignored) {}
+            try {
+                Method getCommentCompM = hk.getClass().getMethod("getCommentComponent");
+                Object comp = getCommentCompM.invoke(hk);
+                if (comp instanceof Component c) {
+                    String str = c.getString();
+                    if (!str.isEmpty()) comment = str;
+                }
+            } catch (Throwable ignored) {}
+
+            String resolvedDesc = resolveMalilibDescription(modId, category, name, comment);
 
             String keyVal = "";
             try {
@@ -209,7 +220,7 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
                     modId,
                     modName,
                     ItemStack.EMPTY,
-                    comment.isEmpty() ? (title + " (" + path + ")") : comment
+                    resolvedDesc.isEmpty() ? (title + " (" + path + ")") : resolvedDesc
             ));
         } catch (Throwable ignored) {}
     }
@@ -250,6 +261,16 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
                 Object c = getCommentM.invoke(config);
                 if (c instanceof String s) comment = s;
             } catch (Throwable ignored) {}
+            try {
+                Method getCommentCompM = config.getClass().getMethod("getCommentComponent");
+                Object comp = getCommentCompM.invoke(config);
+                if (comp instanceof Component c) {
+                    String str = c.getString();
+                    if (!str.isEmpty()) comment = str;
+                }
+            } catch (Throwable ignored) {}
+
+            String resolvedDesc = resolveMalilibDescription(modId, category, name, comment);
 
             String val = "";
             try {
@@ -274,9 +295,44 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
                         modId,
                         modName,
                         ItemStack.EMPTY,
-                        comment.isEmpty() ? (title + " (" + path + ")") : comment
+                        resolvedDesc.isEmpty() ? (title + " (" + path + ")") : resolvedDesc
                 ));
             }
         } catch (Throwable ignored) {}
+    }
+
+    private String resolveMalilibDescription(String modId, String category, String name, String rawComment) {
+        Language lang = Language.getInstance();
+        if (rawComment != null && !rawComment.isEmpty()) {
+            if (lang.has(rawComment)) {
+                return lang.getOrDefault(rawComment);
+            }
+            String trans = Component.translatable(rawComment).getString();
+            if (!trans.equals(rawComment) && !trans.isEmpty()) {
+                return trans;
+            }
+        }
+
+        String lowerCat = category != null ? category.toLowerCase(Locale.ROOT).replace(" settings", "").replace(" ", "_") : "";
+        String[] candidates = new String[] {
+                modId + ".config." + lowerCat + ".comment." + name,
+                modId + ".config.comment." + name,
+                modId + ".config." + name + ".comment",
+                modId + ".config." + name + ".tooltip",
+                modId + ".hotkey.comment." + name,
+                modId + ".comment." + name,
+                modId + ".tooltip." + name,
+                modId + "." + name + ".desc"
+        };
+        for (String cand : candidates) {
+            if (lang.has(cand)) {
+                return lang.getOrDefault(cand);
+            }
+            String trans = Component.translatable(cand).getString();
+            if (!trans.equals(cand) && !trans.isEmpty()) {
+                return trans;
+            }
+        }
+        return rawComment != null ? rawComment : "";
     }
 }
