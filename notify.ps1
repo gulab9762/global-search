@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Added Structure, GameRule, Statistics, and Advancements categories! Added 1-click command copying for Biomes (/locate), Items (/give), Enchantments (/give), Structures (/locate & edit), and live GameRule editing."
+    "Global Search: Added scrollable categories list with scrollbar, fixed structure syncing (vanilla BuiltinStructures + singleplayer server), live statistics real-time sync, and non-blocking multi-threaded async provider indexing!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }
