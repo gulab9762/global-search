@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Multi-theme engine (Netherite RPG, Obsidian Glass, Raycast Clean, Ender Twilight) with rounded corners, category icons, live F6 toggle, and automated UI test script successfully implemented and verified!"
+    "Global Search: Universal Global Setting Editor implemented! In-place boolean toggle and themed setting dialog for numbers, choices, and strings across Xaero's Maps, Vanilla, Cloth Config, NeoForge, and Malilib!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }

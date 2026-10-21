@@ -28,6 +28,16 @@ public interface SearchIndexProvider {
     void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys);
 
     /**
+     * Checks if this provider can handle editing for the given result.
+     *
+     * @param result The search result to check.
+     * @return true if editable, false otherwise.
+     */
+    default boolean canEdit(SearchResult result) {
+        return false;
+    }
+
+    /**
      * Handle an edit action triggered from a search result produced by this provider.
      *
      * @param minecraft Minecraft client instance

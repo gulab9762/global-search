@@ -1,21 +1,34 @@
 package com.igxxd.globalsearch.search.provider;
 
 import com.igxxd.globalsearch.Constants;
+import com.igxxd.globalsearch.gui.GlobalSettingEditScreen;
 import com.igxxd.globalsearch.platform.Services;
 import com.igxxd.globalsearch.search.SearchResult;
 import com.igxxd.globalsearch.search.SearchResultType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class ClothConfigIndexProvider implements SearchIndexProvider {
+
+    private static class ClothFieldEntry {
+        final Object holder;
+        final Object configObj;
+        final Field field;
+
+        ClothFieldEntry(Object holder, Object configObj, Field field) {
+            this.holder = holder;
+            this.configObj = configObj;
+            this.field = field;
+        }
+    }
+
+    private final Map<String, ClothFieldEntry> clothEntries = new HashMap<>();
 
     @Override
     public String getName() {
@@ -24,6 +37,7 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
 
     @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
+        clothEntries.clear();
         try {
             Class<?> autoConfigCls = Class.forName("me.shedaniel.autoconfig.AutoConfig");
             Field holdersField = null;
@@ -76,17 +90,19 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
                                         desc = "Cloth Config setting for " + modName;
                                     }
 
-                                    results.add(new SearchResult(
-                                            SearchResultType.SETTING,
-                                            id,
-                                            title,
-                                            path,
-                                            String.valueOf(val),
-                                            modId,
-                                            modName,
-                                            ItemStack.EMPTY,
-                                            desc
-                                    ));
+                                    clothEntries.put(id, new ClothFieldEntry(holder, configObj, cfgField));
+
+                                    SearchResult sr = SearchResult.builder(SearchResultType.SETTING, id, title)
+                                            .path(path)
+                                            .value(String.valueOf(val))
+                                            .modId(modId)
+                                            .modName(modName)
+                                            .description(desc)
+                                            .editable(true)
+                                            .provider(this)
+                                            .build();
+
+                                    results.add(sr);
                                 }
                             }
                         }
@@ -97,5 +113,104 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
         } catch (Throwable t) {
             Constants.LOG.debug("Cloth config scanner finished with message", t);
         }
+    }
+
+    private void saveClothHolder(Object holder) {
+        if (holder == null) return;
+        try {
+            for (Method m : holder.getClass().getMethods()) {
+                if ("save".equals(m.getName()) && m.getParameterCount() == 0) {
+                    m.invoke(holder);
+                    return;
+                }
+            }
+        } catch (Throwable t) {
+            Constants.LOG.error("Failed to save Cloth Config: {}", t.getMessage());
+        }
+    }
+
+    @Override
+    public boolean canEdit(SearchResult result) {
+        return result != null && clothEntries.containsKey(result.getId());
+    }
+
+    @Override
+    public boolean handleEdit(Minecraft minecraft, SearchResult result, Screen screen, Consumer<String> onValueChanged) {
+        if (result == null) return false;
+        ClothFieldEntry entry = clothEntries.get(result.getId());
+        if (entry == null) return false;
+
+        try {
+            Class<?> type = entry.field.getType();
+            Object currentVal = entry.field.get(entry.configObj);
+
+            // 1. Instant toggle for booleans
+            if (type == boolean.class || type == Boolean.class) {
+                boolean curB = currentVal instanceof Boolean b && b;
+                boolean newB = !curB;
+                entry.field.set(entry.configObj, newB);
+                saveClothHolder(entry.holder);
+                result.setValue(String.valueOf(newB));
+                if (onValueChanged != null) {
+                    onValueChanged.accept(String.valueOf(newB));
+                }
+                return true;
+            }
+
+            // 2. Choice options for enums
+            List<String> choiceOptions = new ArrayList<>();
+            if (type.isEnum()) {
+                for (Object constant : type.getEnumConstants()) {
+                    choiceOptions.add(((Enum<?>) constant).name());
+                }
+            }
+
+            // 3. Open GlobalSettingEditScreen for numbers, strings, enums
+            minecraft.gui.setScreen(new GlobalSettingEditScreen(
+                    screen,
+                    result,
+                    null, // auto-detect type
+                    choiceOptions,
+                    String.valueOf(currentVal),
+                    newValStr -> {
+                        try {
+                            Object parsed = parseValue(type, newValStr);
+                            entry.field.set(entry.configObj, parsed);
+                            saveClothHolder(entry.holder);
+                            return true;
+                        } catch (Exception e) {
+                            return false;
+                        }
+                    },
+                    onValueChanged
+            ));
+            return true;
+        } catch (Throwable t) {
+            Constants.LOG.error("Failed to edit Cloth config {}: {}", result.getId(), t.getMessage());
+        }
+        return false;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Object parseValue(Class<?> targetType, String s) {
+        if (targetType == int.class || targetType == Integer.class) {
+            return Integer.parseInt(s.trim());
+        }
+        if (targetType == double.class || targetType == Double.class) {
+            return Double.parseDouble(s.trim());
+        }
+        if (targetType == float.class || targetType == Float.class) {
+            return Float.parseFloat(s.trim());
+        }
+        if (targetType == long.class || targetType == Long.class) {
+            return Long.parseLong(s.trim());
+        }
+        if (targetType == boolean.class || targetType == Boolean.class) {
+            return Boolean.parseBoolean(s.trim());
+        }
+        if (targetType.isEnum()) {
+            return Enum.valueOf((Class<Enum>) targetType, s.trim());
+        }
+        return s;
     }
 }

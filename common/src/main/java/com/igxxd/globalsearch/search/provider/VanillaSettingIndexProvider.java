@@ -21,7 +21,16 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
 
     @FunctionalInterface
     public interface SettingEditor {
+        String edit(Minecraft minecraft, Options options, Screen screen, Consumer<String> onValueChanged) throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface SimpleSettingEditor {
         String edit(Minecraft minecraft, Options options) throws Exception;
+    }
+
+    private void addSetting(List<SearchResult> results, Set<String> seenKeys, String title, String path, String value, String transKey, SimpleSettingEditor editor) {
+        addSetting(results, seenKeys, title, path, value, transKey, editor != null ? (mc, opts, scr, cb) -> editor.edit(mc, opts) : null);
     }
 
     private final Map<String, SettingEditor> settingEditors = new HashMap<>();
@@ -209,19 +218,59 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                         SettingEditor editor = null;
                         Object valObj = instance.get();
                         if (valObj instanceof Boolean) {
-                            editor = (mc, opts) -> {
+                            editor = (mc, opts, scr, cb) -> {
                                 boolean val = !((Boolean) instance.get());
                                 ((OptionInstance<Boolean>) instance).set(val);
                                 opts.save();
                                 return val ? "ON" : "OFF";
                             };
                         } else if (valObj instanceof Enum<?> e) {
-                            editor = (mc, opts) -> {
+                            editor = (mc, opts, scr, cb) -> {
                                 Enum<?>[] constants = e.getDeclaringClass().getEnumConstants();
                                 Enum<?> next = constants[(e.ordinal() + 1) % constants.length];
                                 ((OptionInstance<Object>) instance).set(next);
                                 opts.save();
                                 return next.name();
+                            };
+                        } else if (valObj instanceof Integer) {
+                            String finalReadableName = readableName;
+                            String finalPath = path;
+                            editor = (mc, opts, scr, cb) -> {
+                                mc.gui.setScreen(new com.igxxd.globalsearch.gui.GlobalSettingEditScreen(
+                                        scr,
+                                        new SearchResult(SearchResultType.SETTING, "options." + methodName, finalReadableName, finalPath, String.valueOf(instance.get()), "minecraft", "Minecraft", ItemStack.EMPTY, ""),
+                                        com.igxxd.globalsearch.gui.GlobalSettingEditScreen.SettingType.INTEGER,
+                                        List.of(),
+                                        String.valueOf(instance.get()),
+                                        newValStr -> {
+                                            int n = Integer.parseInt(newValStr.trim());
+                                            ((OptionInstance<Integer>) instance).set(n);
+                                            opts.save();
+                                            return true;
+                                        },
+                                        cb
+                                ));
+                                return null;
+                            };
+                        } else if (valObj instanceof Double) {
+                            String finalReadableName = readableName;
+                            String finalPath = path;
+                            editor = (mc, opts, scr, cb) -> {
+                                mc.gui.setScreen(new com.igxxd.globalsearch.gui.GlobalSettingEditScreen(
+                                        scr,
+                                        new SearchResult(SearchResultType.SETTING, "options." + methodName, finalReadableName, finalPath, String.valueOf(instance.get()), "minecraft", "Minecraft", ItemStack.EMPTY, ""),
+                                        com.igxxd.globalsearch.gui.GlobalSettingEditScreen.SettingType.DOUBLE,
+                                        List.of(),
+                                        String.valueOf(instance.get()),
+                                        newValStr -> {
+                                            double d = Double.parseDouble(newValStr.trim());
+                                            ((OptionInstance<Double>) instance).set(d);
+                                            opts.save();
+                                            return true;
+                                        },
+                                        cb
+                                ));
+                                return null;
                             };
                         }
 
@@ -314,19 +363,24 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
     }
 
     @Override
+    public boolean canEdit(SearchResult result) {
+        return result != null && settingEditors.containsKey(result.getId());
+    }
+
+    @Override
     public boolean handleEdit(Minecraft minecraft, SearchResult result, Screen screen, Consumer<String> onValueChanged) {
         if (minecraft.options == null) return false;
         SettingEditor editor = settingEditors.get(result.getId());
         if (editor != null) {
             try {
-                String newVal = editor.edit(minecraft, minecraft.options);
+                String newVal = editor.edit(minecraft, minecraft.options, screen, onValueChanged);
                 if (newVal != null) {
                     result.setValue(newVal);
                     if (onValueChanged != null) {
                         onValueChanged.accept(newVal);
                     }
-                    return true;
                 }
+                return true;
             } catch (Throwable t) {
                 Constants.LOG.error("Failed to edit setting '{}': {}", result.getId(), t.getMessage());
             }

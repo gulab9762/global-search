@@ -225,6 +225,8 @@ public class GlobalSearchScreen extends Screen {
         }
 
         boolean edited = com.igxxd.globalsearch.api.GlobalSearchApi.triggerEdit(result, this, newVal -> {
+            this.copiedNotification = "Updated " + result.getTitle() + " to [" + newVal + "]";
+            this.notificationExpiry = System.currentTimeMillis() + 3000;
             if (this.resultList != null) {
                 this.resultList.refreshLayout();
             }

@@ -12,12 +12,25 @@ import net.minecraft.world.item.ItemStack;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 public class MalilibConfigIndexProvider implements SearchIndexProvider {
+
+    private static class MalilibConfigEntry {
+        final Object config;
+        final String modId;
+
+        MalilibConfigEntry(Object config, String modId) {
+            this.config = config;
+            this.modId = modId;
+        }
+    }
+
+    private final Map<String, MalilibConfigEntry> malilibConfigs = new HashMap<>();
 
     @Override
     public String getName() {
@@ -26,6 +39,7 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
 
     @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
+        malilibConfigs.clear();
         // 1. Hotkeys from InputEventHandler.getKeybindManager()
         try {
             Class<?> inputEventHandlerCls = Class.forName("fi.dy.masa.malilib.event.InputEventHandler");
@@ -286,17 +300,18 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
             String key = SearchResultType.SETTING.name() + ":" + id.toLowerCase(Locale.ROOT);
 
             if (seenKeys.add(key)) {
-                results.add(new SearchResult(
-                        SearchResultType.SETTING,
-                        id,
-                        title,
-                        path,
-                        val,
-                        modId,
-                        modName,
-                        ItemStack.EMPTY,
-                        resolvedDesc.isEmpty() ? (title + " (" + path + ")") : resolvedDesc
-                ));
+                malilibConfigs.put(id, new MalilibConfigEntry(config, modId));
+
+                results.add(SearchResult.builder(SearchResultType.SETTING, id, title)
+                        .path(path)
+                        .value(val)
+                        .modId(modId)
+                        .modName(modName)
+                        .description(resolvedDesc.isEmpty() ? (title + " (" + path + ")") : resolvedDesc)
+                        .editable(true)
+                        .provider(this)
+                        .build()
+                );
             }
         } catch (Throwable ignored) {}
     }
@@ -334,5 +349,63 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
             }
         }
         return rawComment != null ? rawComment : "";
+    }
+
+    @Override
+    public boolean canEdit(SearchResult result) {
+        return result != null && malilibConfigs.containsKey(result.getId());
+    }
+
+    @Override
+    public boolean handleEdit(Minecraft minecraft, SearchResult result, net.minecraft.client.gui.screens.Screen screen, java.util.function.Consumer<String> onValueChanged) {
+        if (result == null) return false;
+        MalilibConfigEntry entry = malilibConfigs.get(result.getId());
+        if (entry == null) return false;
+
+        String currentVal = result.getValue() != null ? result.getValue().trim() : "";
+
+        // 1. Instant toggle for booleans
+        if ("true".equalsIgnoreCase(currentVal) || "false".equalsIgnoreCase(currentVal)) {
+            boolean curB = Boolean.parseBoolean(currentVal);
+            boolean newB = !curB;
+            if (setMalilibValue(entry, String.valueOf(newB))) {
+                result.setValue(String.valueOf(newB));
+                if (onValueChanged != null) {
+                    onValueChanged.accept(String.valueOf(newB));
+                }
+                return true;
+            }
+        }
+
+        // 2. Open GlobalSettingEditScreen for numbers, strings, enums
+        minecraft.gui.setScreen(new com.igxxd.globalsearch.gui.GlobalSettingEditScreen(
+                screen,
+                result,
+                null,
+                java.util.List.of(),
+                currentVal,
+                newValStr -> setMalilibValue(entry, newValStr),
+                onValueChanged
+        ));
+        return true;
+    }
+
+    private boolean setMalilibValue(MalilibConfigEntry entry, String newValStr) {
+        try {
+            Method setValM = entry.config.getClass().getMethod("setValueFromString", String.class);
+            setValM.invoke(entry.config, newValStr);
+
+            // Save mod config
+            Class<?> cmCls = Class.forName("fi.dy.masa.malilib.config.ConfigManager");
+            Object cm = cmCls.getMethod("getInstance").invoke(null);
+            Object handler = cm.getClass().getMethod("getConfigHandler", String.class).invoke(cm, entry.modId);
+            if (handler != null) {
+                handler.getClass().getMethod("save").invoke(handler);
+            }
+            return true;
+        } catch (Throwable t) {
+            Constants.LOG.error("Failed to set Malilib option: {}", t.getMessage());
+            return false;
+        }
     }
 }

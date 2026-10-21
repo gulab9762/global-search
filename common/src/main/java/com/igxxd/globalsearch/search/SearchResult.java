@@ -133,7 +133,7 @@ public class SearchResult {
     }
 
     public boolean isEditable() {
-        return editable || editHandler != null;
+        return editable || editHandler != null || (provider != null && provider.canEdit(this));
     }
 
     public ResultEditHandler getEditHandler() {
