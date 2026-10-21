@@ -5,6 +5,9 @@
             "label": "Minecraft: Run Fabric Client",
             "type": "shell",
             "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
             "args": [
                 ":fabric:runClient"
             ],
@@ -30,6 +33,9 @@
             "label": "Minecraft: Run NeoForge Client",
             "type": "shell",
             "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
             "args": [
                 ":neoforge:runClient"
             ],
@@ -52,6 +58,9 @@
             "label": "Minecraft: Build All",
             "type": "shell",
             "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
             "args": [
                 "buildAllMods"
             ],
@@ -65,9 +74,44 @@
             "problemMatcher": []
         },
         {
+            "label": "Minecraft: Build Fabric",
+            "type": "shell",
+            "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
+            "args": [
+                "buildFabric"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Minecraft: Build NeoForge",
+            "type": "shell",
+            "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
+            "args": [
+                "buildNeoForge"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
             "label": "Minecraft: Run Tests",
             "type": "shell",
             "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
             "args": [
                 "test"
             ],
@@ -81,6 +125,9 @@
             "label": "Minecraft: Build and Deploy to MultiMC",
             "type": "shell",
             "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
             "args": [
                 "buildAndDeploy"
             ],
@@ -94,6 +141,9 @@
             "label": "Minecraft: Deploy Fabric to MultiMC",
             "type": "shell",
             "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
             "args": [
                 "deployFabricToMultiMC"
             ],
@@ -107,6 +157,9 @@
             "label": "Minecraft: Deploy NeoForge to MultiMC",
             "type": "shell",
             "command": "./gradlew",
+            "windows": {
+                "command": ".\\gradlew.bat"
+            },
             "args": [
                 "deployNeoForgeToMultiMC"
             ],

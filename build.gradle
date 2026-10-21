@@ -49,6 +49,56 @@ tasks.register('buildAllMods') {
     dependsOn ':fabric:build', ':neoforge:build'
 }
 
+// --- Fabric Tasks ---
+tasks.register('buildFabric') {
+    group = 'fabric'
+    description = 'Builds the Fabric mod JAR.'
+    dependsOn ':fabric:build'
+}
+
+tasks.register('runFabricClient') {
+    group = 'fabric'
+    description = 'Runs the Fabric development client.'
+    dependsOn ':fabric:runClient'
+}
+
+tasks.register('runFabricServer') {
+    group = 'fabric'
+    description = 'Runs the Fabric development server.'
+    dependsOn ':fabric:runServer'
+}
+
+tasks.register('cleanFabric') {
+    group = 'fabric'
+    description = 'Cleans Fabric build outputs.'
+    dependsOn ':fabric:clean'
+}
+
+// --- NeoForge Tasks ---
+tasks.register('buildNeoForge') {
+    group = 'neoforge'
+    description = 'Builds the NeoForge mod JAR.'
+    dependsOn ':neoforge:build'
+}
+
+tasks.register('runNeoForgeClient') {
+    group = 'neoforge'
+    description = 'Runs the NeoForge development client.'
+    dependsOn ':neoforge:runClient'
+}
+
+tasks.register('runNeoForgeServer') {
+    group = 'neoforge'
+    description = 'Runs the NeoForge development server.'
+    dependsOn ':neoforge:runServer'
+}
+
+tasks.register('cleanNeoForge') {
+    group = 'neoforge'
+    description = 'Cleans NeoForge build outputs.'
+    dependsOn ':neoforge:clean'
+}
+
 tasks.register('deployFabricToMultiMC') {
     group = 'deployment'
     description = 'Deploys the Fabric mod JAR to MultiMC.'
