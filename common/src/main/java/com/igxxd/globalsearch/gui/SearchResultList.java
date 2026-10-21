@@ -176,6 +176,14 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             boolean isListeningNow = isListening != null && isListening.test(result);
             boolean isEditHovered = hasEdit && mouseX >= editBtnX && mouseX <= editBtnX + editBtnW && mouseY >= editBtnY && mouseY <= editBtnY + editBtnH;
 
+            boolean hasAction = result.hasActionCommand();
+            String actionLabel = result.getActionCommandLabel();
+            int actionBtnW = Math.max(font.width(actionLabel) + 10, 32);
+            int actionBtnH = 18;
+            int actionBtnX = (hasEdit ? editBtnX : expandBtnX) - actionBtnW - 4;
+            int actionBtnY = y + 8;
+            boolean isActionHovered = hasAction && mouseX >= actionBtnX && mouseX <= actionBtnX + actionBtnW && mouseY >= actionBtnY && mouseY <= actionBtnY + actionBtnH;
+
             int iconBoxSize = 22;
             int iconBoxX = x + 5;
             int iconBoxY = y + 8;
@@ -184,7 +192,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             SearchTheme theme = SearchTheme.getCurrent();
 
             // Background card with rounded corners and theme colors
-            if ((isHovered && !isBtnHovered && !isEditHovered && !isIconHovered) || isFocused()) {
+            if ((isHovered && !isBtnHovered && !isEditHovered && !isActionHovered && !isIconHovered) || isFocused()) {
                 GuiRenderUtils.drawRoundedCard(graphics, x, y + 1, width, height - 2, theme.getCardHoverBg(), theme.getCardBorderHover(), 0x22FFFFFF);
             } else {
                 GuiRenderUtils.drawRoundedBox(graphics, x, y + 1, width, height - 2, theme.getCardBg(), theme.getCardBorder());
@@ -205,7 +213,7 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             }
 
             int curX = iconBoxX + iconBoxSize + 7;
-            int rightBoundaryX = hasEdit ? editBtnX - 4 : expandBtnX - 4;
+            int rightBoundaryX = hasAction ? actionBtnX - 4 : (hasEdit ? editBtnX - 4 : expandBtnX - 4);
             int availableWidth = rightBoundaryX - curX;
 
             // 3. Line 1: Title + Value Pill
@@ -256,7 +264,18 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 graphics.text(font, displayPath, pathStartX, line2Y, theme.getMutedTextColor());
             }
 
-            // 5. Edit Button (Themed Rounded Action Button)
+            // 5a. Action / Command Copy Button ([Locate], [Give], etc.)
+            if (hasAction) {
+                if (isActionHovered) {
+                    GuiRenderUtils.drawRoundedBox(graphics, actionBtnX, actionBtnY, actionBtnW, actionBtnH, theme.getActiveBtnGradTop(), theme.getActiveBtnBorder());
+                    graphics.centeredText(font, actionLabel, actionBtnX + (actionBtnW / 2), actionBtnY + (actionBtnH - 8) / 2, 0xFFFFFFFF);
+                } else {
+                    GuiRenderUtils.drawRoundedBox(graphics, actionBtnX, actionBtnY, actionBtnW, actionBtnH, theme.getCardBg(), theme.getCardBorder());
+                    graphics.centeredText(font, actionLabel, actionBtnX + (actionBtnW / 2), actionBtnY + (actionBtnH - 8) / 2, theme.getTitleColor());
+                }
+            }
+
+            // 5b. Edit Button (Themed Rounded Action Button)
             if (hasEdit) {
                 if (isListeningNow) {
                     GuiRenderUtils.drawRoundedBox(graphics, editBtnX, editBtnY, editBtnW, editBtnH, theme.getActiveBtnGradTop(), theme.getAccentColor());
@@ -325,6 +344,17 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                     curY += 12;
                 }
 
+                // Detail 4b: Command (if action command available)
+                if (result.hasActionCommand()) {
+                    Component cmdComp = Component.literal("Command: ").withStyle(style -> style.withColor(theme.getAccentColor()))
+                            .append(Component.literal(result.getCopyValue()).withStyle(style -> style.withColor(theme.getTitleColor())));
+                    var cmdLines = font.split(cmdComp, contentWidth);
+                    for (var cline : cmdLines) {
+                        graphics.text(font, cline, innerX, curY, theme.getTitleColor());
+                        curY += 11;
+                    }
+                }
+
                 // Detail 5: Description
                 if (!result.getDescription().isEmpty()) {
                     graphics.text(font, Component.literal("Description:").withStyle(style -> style.withColor(theme.getAccentColor())), innerX, curY, theme.getAccentColor());
@@ -369,7 +399,24 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 return true;
             }
 
-            // 2. On click [Edit] only, do edit!
+            // 2. On click [Action] button, copy action command
+            boolean hasAction = result.hasActionCommand();
+            if (hasAction) {
+                String actionLabel = result.getActionCommandLabel();
+                int actionBtnW = Math.max(Minecraft.getInstance().font.width(actionLabel) + 10, 32);
+                int actionBtnH = 18;
+                int actionBtnX = (result.isEditable() ? (expandBtnX - 34) : expandBtnX) - actionBtnW - 4;
+                int actionBtnY = this.getY() + 8;
+
+                if (mx >= actionBtnX && mx <= actionBtnX + actionBtnW && my >= actionBtnY && my <= actionBtnY + actionBtnH) {
+                    if (onSelected != null) {
+                        onSelected.accept(result);
+                        return true;
+                    }
+                }
+            }
+
+            // 3. On click [Edit] only, do edit!
             if (result.isEditable()) {
                 int editBtnW = 30;
                 int editBtnH = 18;
@@ -384,7 +431,13 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 }
             }
 
-            // 3. Clicking result item row does nothing
+            // 4. Clicking result item row copies command / value
+            if (mx >= this.getX() && mx <= this.getX() + this.getWidth() && my >= this.getY() && my <= this.getY() + this.getHeight()) {
+                if (onSelected != null) {
+                    onSelected.accept(result);
+                    return true;
+                }
+            }
             return false;
         }
     }

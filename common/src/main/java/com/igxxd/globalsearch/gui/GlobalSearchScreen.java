@@ -85,7 +85,7 @@ public class GlobalSearchScreen extends Screen {
         );
         this.searchBox.setBordered(false);
         this.searchBox.setTextColor(SearchTheme.getCurrent().getTitleColor());
-        this.searchBox.setHint(Component.literal("Search keybinds, settings, items, biomes, mods...").withStyle(ChatFormatting.DARK_GRAY));
+        this.searchBox.setHint(Component.literal("Search keybinds, settings, items, gamerules, stats...").withStyle(ChatFormatting.DARK_GRAY));
         if (!savedSearchQuery.isEmpty()) {
             this.searchBox.setValue(savedSearchQuery);
         }
@@ -138,8 +138,8 @@ public class GlobalSearchScreen extends Screen {
         int btnWidth = navWidth - 8;
         int totalItems = filterTypes.size() + (this.currentFilter.equals(SearchResultType.KEYBIND) ? 1 : 0);
         int availableH = navHeight - 20;
-        int btnHeight = Math.max(16, Math.min(20, (availableH - (totalItems * 2)) / Math.max(1, totalItems)));
-        int spacing = Math.max(1, Math.min(3, (availableH - (totalItems * btnHeight)) / Math.max(1, totalItems)));
+        int btnHeight = Math.max(13, Math.min(18, (availableH - (totalItems * 2)) / Math.max(1, totalItems)));
+        int spacing = Math.max(1, Math.min(2, (availableH - (totalItems * btnHeight)) / Math.max(1, totalItems)));
         int btnY = navY + 18;
 
         for (SearchResultType type : filterTypes) {
@@ -311,7 +311,11 @@ public class GlobalSearchScreen extends Screen {
         if (this.minecraft != null && result != null) {
             String valueToCopy = result.getCopyValue();
             this.minecraft.keyboardHandler.setClipboard(valueToCopy);
-            this.copiedNotification = valueToCopy;
+            if (result.hasActionCommand()) {
+                this.copiedNotification = "Copied " + result.getActionCommandLabel() + " command: " + valueToCopy;
+            } else {
+                this.copiedNotification = "Copied: " + valueToCopy;
+            }
             this.notificationExpiry = System.currentTimeMillis() + 3000;
         }
     }

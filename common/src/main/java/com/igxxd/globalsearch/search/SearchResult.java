@@ -201,10 +201,46 @@ public class SearchResult {
     }
 
     public String getCopyValue() {
+        if (SearchResultType.BIOME.equals(type)) {
+            return "/locate biome " + path;
+        }
+        if (SearchResultType.ITEM.equals(type)) {
+            return "/give @p " + path + " 1";
+        }
+        if (SearchResultType.ENCHANTMENT.equals(type)) {
+            return "/give @p enchanted_book[stored_enchantments={levels:{\"" + path + "\":1}}] 1";
+        }
+        if (SearchResultType.STRUCTURE.equals(type)) {
+            return "/locate structure " + path;
+        }
+        if (SearchResultType.GAMERULE.equals(type)) {
+            return "/gamerule " + id + " " + value;
+        }
         if (!value.isEmpty()) {
             return value;
         }
         return id;
+    }
+
+    public boolean hasActionCommand() {
+        return SearchResultType.BIOME.equals(type)
+                || SearchResultType.ITEM.equals(type)
+                || SearchResultType.ENCHANTMENT.equals(type)
+                || SearchResultType.STRUCTURE.equals(type)
+                || SearchResultType.GAMERULE.equals(type);
+    }
+
+    public String getActionCommandLabel() {
+        if (SearchResultType.BIOME.equals(type) || SearchResultType.STRUCTURE.equals(type)) {
+            return "Locate";
+        }
+        if (SearchResultType.ITEM.equals(type) || SearchResultType.ENCHANTMENT.equals(type)) {
+            return "Give";
+        }
+        if (SearchResultType.GAMERULE.equals(type)) {
+            return "Rule";
+        }
+        return "Copy";
     }
 
     public String getDescription() {
@@ -250,7 +286,13 @@ public class SearchResult {
         }
 
         tooltip.add(Component.empty());
-        tooltip.add(Component.literal("Click to copy value to clipboard").withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
+        if (hasActionCommand()) {
+            tooltip.add(Component.literal("Command: ").withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(getCopyValue()).withStyle(ChatFormatting.AQUA)));
+            tooltip.add(Component.literal("Press Enter or click to copy " + getActionCommandLabel() + " command").withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
+        } else {
+            tooltip.add(Component.literal("Click or press Enter to copy value to clipboard").withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
+        }
         return tooltip;
     }
 

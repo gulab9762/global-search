@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Obsidian Glass set as default theme with sleek translucent frosted glass background!"
+    "Global Search: Added Structure, GameRule, Statistics, and Advancements categories! Added 1-click command copying for Biomes (/locate), Items (/give), Enchantments (/give), Structures (/locate & edit), and live GameRule editing."
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }

@@ -24,6 +24,10 @@ public class SearchResultType {
     public static final SearchResultType BIOME = register(new SearchResultType("biome", "Biome", "BIOME", 0xFF55FF55, 0x4455FF55, 0xFF88FF88, () -> new ItemStack(Items.GRASS_BLOCK)));
     public static final SearchResultType DIMENSION = register(new SearchResultType("dimension", "Dimension", "DIM", 0xFFAA55FF, 0x44AA55FF, 0xFFDD88FF, () -> new ItemStack(Items.ENDER_EYE)));
     public static final SearchResultType MOD = register(new SearchResultType("mod", "Mod", "MOD", 0xFF55AAFF, 0x4455AAFF, 0xFF88AAFF, () -> new ItemStack(Items.KNOWLEDGE_BOOK)));
+    public static final SearchResultType STRUCTURE = register(new SearchResultType("structure", "Structure", "STRUCT", 0xFFFFAA55, 0x44FFAA55, 0xFFFFCC88, () -> new ItemStack(Items.CHISELED_STONE_BRICKS)));
+    public static final SearchResultType GAMERULE = register(new SearchResultType("gamerule", "Game Rule", "RULE", 0xFF55FF88, 0x4455FF88, 0xFF88FFBB, () -> new ItemStack(Items.COMMAND_BLOCK)));
+    public static final SearchResultType STATISTIC = register(new SearchResultType("statistic", "Statistic", "STAT", 0xFFFFAA00, 0x44FFAA00, 0xFFFFDD66, () -> new ItemStack(Items.WRITABLE_BOOK)));
+    public static final SearchResultType ADVANCEMENT = register(new SearchResultType("advancement", "Advancement", "ADVANCE", 0xFFFFD700, 0x44FFD700, 0xFFFFF099, () -> new ItemStack(Items.TARGET)));
 
     private final String id;
     private final String label;
@@ -106,6 +110,10 @@ public class SearchResultType {
             case "biome" -> "🌲";
             case "dimension" -> "🌌";
             case "mod" -> "🧩";
+            case "structure" -> "🏛️";
+            case "gamerule" -> "⚖️";
+            case "statistic" -> "📊";
+            case "advancement" -> "🏆";
             default -> "•";
         };
     }
