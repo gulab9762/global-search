@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Smart Setting Modal Popup implemented! Identifies value type (Boolean, Integer, Decimal, Choice, Text) with type badges, dual TRUE/FALSE buttons, and a draggable slider bar alongside direct number input for FOV and numeric settings!"
+    "Global Search: Bottom helper text, keybind listening prompt, and expanded details now dynamically follow the active theme colors!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }
