@@ -222,10 +222,11 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             if (isListeningNow) {
                 float pulse = (float) (0.6 + 0.4 * Math.sin(System.currentTimeMillis() * 0.008));
                 int valAlpha = (int) (pulse * 255);
-                int pulseColor = (valAlpha << 24) | 0x00FF4444;
+                int pulseColor = (valAlpha << 24) | (theme.getAccentColor() & 0x00FFFFFF);
                 String listenText = "[Press Any Key...]";
                 int pillW = font.width(listenText) + 6;
-                GuiRenderUtils.drawRoundedBox(graphics, valStartX - 2, line1Y - 1, pillW, 11, 0x667F1D1D, 0xFFEF4444);
+                int pillBg = ((valAlpha / 4) << 24) | (theme.getActiveBtnGradTop() & 0x00FFFFFF);
+                GuiRenderUtils.drawRoundedBox(graphics, valStartX - 2, line1Y - 1, pillW, 11, pillBg, theme.getAccentColor());
                 graphics.text(font, listenText, valStartX + 1, line1Y, pulseColor);
             } else if (!result.getValue().isEmpty()) {
                 String valStr = "[" + result.getValue() + "]";
@@ -258,8 +259,8 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             // 5. Edit Button (Themed Rounded Action Button)
             if (hasEdit) {
                 if (isListeningNow) {
-                    GuiRenderUtils.drawRoundedBox(graphics, editBtnX, editBtnY, editBtnW, editBtnH, 0xFF7F1D1D, 0xFFEF4444);
-                    graphics.centeredText(font, "> ? <", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 8) / 2, 0xFFFFF0D0);
+                    GuiRenderUtils.drawRoundedBox(graphics, editBtnX, editBtnY, editBtnW, editBtnH, theme.getActiveBtnGradTop(), theme.getAccentColor());
+                    graphics.centeredText(font, "> ? <", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 8) / 2, theme.getActiveBtnText());
                 } else if (isEditHovered) {
                     GuiRenderUtils.drawRoundedBox(graphics, editBtnX, editBtnY, editBtnW, editBtnH, theme.getActiveBtnGradTop(), theme.getActiveBtnBorder());
                     graphics.centeredText(font, "Edit", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 8) / 2, 0xFFFFFFFF);
@@ -292,56 +293,56 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 int innerX = cardX + 7;
                 int curY = cardY + 6;
 
-                // Detail 1: Type (GOLD & YELLOW)
-                Component typeComp = Component.literal("Type: ").withStyle(ChatFormatting.GOLD)
-                        .append(Component.literal(type.getLabel()).withStyle(ChatFormatting.YELLOW));
+                // Detail 1: Type
+                Component typeComp = Component.literal("Type: ").withStyle(style -> style.withColor(theme.getAccentColor()))
+                        .append(Component.literal(type.getLabel()).withStyle(style -> style.withColor(theme.getTitleColor())));
                 graphics.text(font, typeComp, innerX, curY, 0xFFFFFFFF);
                 curY += 12;
 
-                // Detail 2: Mod (BLUE & AQUA)
-                Component modComp = Component.literal("Mod: ").withStyle(ChatFormatting.BLUE)
-                        .append(Component.literal(result.getModName()).withStyle(ChatFormatting.AQUA))
-                        .append(Component.literal(" (" + result.getModId() + ")").withStyle(ChatFormatting.DARK_GRAY));
+                // Detail 2: Mod
+                Component modComp = Component.literal("Mod: ").withStyle(style -> style.withColor(theme.getAccentColor()))
+                        .append(Component.literal(result.getModName()).withStyle(style -> style.withColor(theme.getTitleColor())))
+                        .append(Component.literal(" (" + result.getModId() + ")").withStyle(style -> style.withColor(theme.getMutedTextColor())));
                 graphics.text(font, modComp, innerX, curY, 0xFFFFFFFF);
                 curY += 12;
 
                 // Detail 3: Full Path
                 if (!result.getPath().isEmpty()) {
-                    Component pathComp = Component.literal("Path: ").withStyle(ChatFormatting.DARK_GRAY)
-                            .append(Component.literal(result.getPath()).withStyle(ChatFormatting.GRAY));
+                    Component pathComp = Component.literal("Path: ").withStyle(style -> style.withColor(theme.getMutedTextColor()))
+                            .append(Component.literal(result.getPath()).withStyle(style -> style.withColor(theme.getTitleColor())));
                     var pathLines = font.split(pathComp, contentWidth);
                     for (var pline : pathLines) {
-                        graphics.text(font, pline, innerX, curY, 0xFFCCCCCC);
+                        graphics.text(font, pline, innerX, curY, theme.getMutedTextColor());
                         curY += 11;
                     }
                 }
 
                 // Detail 4: ID (if distinct)
                 if (!result.getId().isEmpty() && !result.getId().equals(result.getPath())) {
-                    Component idComp = Component.literal("ID: ").withStyle(ChatFormatting.DARK_GRAY)
-                            .append(Component.literal(result.getId()).withStyle(ChatFormatting.DARK_AQUA));
-                    graphics.text(font, idComp, innerX, curY, 0xFF88DDAA);
+                    Component idComp = Component.literal("ID: ").withStyle(style -> style.withColor(theme.getMutedTextColor()))
+                            .append(Component.literal(result.getId()).withStyle(style -> style.withColor(theme.getAccentColor())));
+                    graphics.text(font, idComp, innerX, curY, theme.getAccentColor());
                     curY += 12;
                 }
 
                 // Detail 5: Description
                 if (!result.getDescription().isEmpty()) {
-                    graphics.text(font, Component.literal("Description:").withStyle(ChatFormatting.GOLD), innerX, curY, 0xFFFFAA00);
+                    graphics.text(font, Component.literal("Description:").withStyle(style -> style.withColor(theme.getAccentColor())), innerX, curY, theme.getAccentColor());
                     curY += 11;
                     var descLines = font.split(Component.literal(result.getDescription()), contentWidth);
                     for (var dline : descLines) {
-                        graphics.text(font, dline, innerX, curY, 0xFFE0E0E0);
+                        graphics.text(font, dline, innerX, curY, theme.getTitleColor());
                         curY += 11;
                     }
                 }
 
                 // Detail 6: Tags
                 if (result.hasTags()) {
-                    graphics.text(font, Component.literal("Tags:").withStyle(ChatFormatting.DARK_AQUA), innerX, curY, 0xFF55FFFF);
+                    graphics.text(font, Component.literal("Tags:").withStyle(style -> style.withColor(theme.getAccentColor())), innerX, curY, theme.getAccentColor());
                     curY += 11;
-                    var tagLines = font.split(Component.literal(result.getTags()).withStyle(ChatFormatting.AQUA), contentWidth);
+                    var tagLines = font.split(Component.literal(result.getTags()).withStyle(style -> style.withColor(theme.getMutedTextColor())), contentWidth);
                     for (var tline : tagLines) {
-                        graphics.text(font, tline, innerX, curY, 0xFF77DDAA);
+                        graphics.text(font, tline, innerX, curY, theme.getMutedTextColor());
                         curY += 11;
                     }
                 }

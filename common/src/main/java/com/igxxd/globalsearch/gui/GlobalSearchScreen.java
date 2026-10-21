@@ -512,26 +512,43 @@ public class GlobalSearchScreen extends Screen {
         if (listeningKeybindResult != null) {
             float pulse = (float) (0.6 + 0.4 * Math.sin(System.currentTimeMillis() * 0.008));
             int alpha = (int) (pulse * 255);
-            int pulseColor = (alpha << 24) | 0x00FFCC00;
-            String listeningText = "▶ Press any key to bind to '" + listeningKeybindResult.getTitle() + "' • Esc to unbind • Click Edit again to cancel";
-            graphics.centeredText(this.font, Component.literal(listeningText).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD), this.width / 2, textY, pulseColor);
+            int pulseColor = (alpha << 24) | (theme.getAccentColor() & 0x00FFFFFF);
+
+            Component listeningComp = Component.literal("▶ Press any key to bind to ").withStyle(style -> style.withColor(theme.getTitleColor()))
+                    .append(Component.literal("'" + listeningKeybindResult.getTitle() + "'").withStyle(style -> style.withColor(theme.getAccentColor()).withBold(true)))
+                    .append(Component.literal("  •  [Esc] ").withStyle(style -> style.withColor(theme.getAccentColor())))
+                    .append(Component.literal("unbind  •  ").withStyle(style -> style.withColor(theme.getMutedTextColor())))
+                    .append(Component.literal("[Click Edit] ").withStyle(style -> style.withColor(theme.getAccentColor())))
+                    .append(Component.literal("cancel").withStyle(style -> style.withColor(theme.getMutedTextColor())));
+
+            int textW = this.font.width(listeningComp);
+            int pillX = (this.width - textW) / 2 - 8;
+            int pillW = textW + 16;
+            int pillH = 14;
+            int pillY = footerY + (footerH - pillH) / 2;
+            int pillBg = ((alpha / 5) << 24) | (theme.getActiveBtnGradTop() & 0x00FFFFFF);
+            int pillBorder = (alpha << 24) | (theme.getAccentColor() & 0x00FFFFFF);
+            GuiRenderUtils.drawRoundedBox(graphics, pillX, pillY, pillW, pillH, pillBg, pillBorder);
+
+            graphics.centeredText(this.font, listeningComp, this.width / 2, textY, pulseColor);
         } else if (copiedNotification != null && System.currentTimeMillis() < notificationExpiry) {
             String notification = copiedNotification.startsWith("Rebound") || copiedNotification.startsWith("Updated") || copiedNotification.startsWith("Rescanned") || copiedNotification.startsWith("Keybind")
                     ? "✓ " + copiedNotification
                     : "✓ Copied to clipboard: " + copiedNotification;
-            graphics.centeredText(this.font, Component.literal(notification).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), this.width / 2, textY, 0xFF4ADE80);
+            Component notifComp = Component.literal(notification).withStyle(style -> style.withColor(theme.getAccentColor()).withBold(true));
+            graphics.centeredText(this.font, notifComp, this.width / 2, textY, theme.getAccentColor());
         } else {
             String stats = "Showing " + filteredResults.size() + " of " + allIndexedResults.size() + " results";
             graphics.text(this.font, stats, 14, textY, theme.getMutedTextColor());
 
-            Component hints = Component.literal("[F6] ").withStyle(ChatFormatting.GOLD)
-                    .append(Component.literal("Theme   ").withStyle(ChatFormatting.GRAY))
-                    .append(Component.literal("[Enter] ").withStyle(ChatFormatting.GOLD))
-                    .append(Component.literal("Select/Edit   ").withStyle(ChatFormatting.GRAY))
-                    .append(Component.literal("[↑ ↓] ").withStyle(ChatFormatting.GOLD))
-                    .append(Component.literal("Nav   ").withStyle(ChatFormatting.GRAY))
-                    .append(Component.literal("[Esc] ").withStyle(ChatFormatting.GOLD))
-                    .append(Component.literal("Close").withStyle(ChatFormatting.GRAY));
+            Component hints = Component.literal("[F6] ").withStyle(style -> style.withColor(theme.getAccentColor()))
+                    .append(Component.literal("Theme   ").withStyle(style -> style.withColor(theme.getMutedTextColor())))
+                    .append(Component.literal("[Enter] ").withStyle(style -> style.withColor(theme.getAccentColor())))
+                    .append(Component.literal("Select/Edit   ").withStyle(style -> style.withColor(theme.getMutedTextColor())))
+                    .append(Component.literal("[↑ ↓] ").withStyle(style -> style.withColor(theme.getAccentColor())))
+                    .append(Component.literal("Nav   ").withStyle(style -> style.withColor(theme.getMutedTextColor())))
+                    .append(Component.literal("[Esc] ").withStyle(style -> style.withColor(theme.getAccentColor())))
+                    .append(Component.literal("Close").withStyle(style -> style.withColor(theme.getMutedTextColor())));
             int hintsW = this.font.width(hints);
             graphics.text(this.font, hints, this.width - hintsW - 14, textY, 0xFFFFFFFF);
         }
