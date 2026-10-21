@@ -181,20 +181,34 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             int iconBoxY = y + 8;
             boolean isIconHovered = mouseX >= iconBoxX && mouseX <= iconBoxX + iconBoxSize && mouseY >= iconBoxY && mouseY <= iconBoxY + iconBoxSize;
 
-            // Background card with hover highlight
+            // Background card with Theme 2: Deep Netherite & Ancient Debris
             if ((isHovered && !isBtnHovered && !isEditHovered && !isIconHovered) || isFocused()) {
-                graphics.fill(x, y + 1, x + width, y + height - 1, 0x33FFFFFF);
+                // Hovered / Focused: Warmer Slate with highlighted bronze border
+                graphics.fill(x, y + 1, x + width, y + height - 1, 0xEE272025);
+                graphics.fill(x, y + 1, x + width, y + 2, 0xFF8C5738);
+                graphics.fill(x, y + height - 2, x + width, y + height - 1, 0xFF5A3D31);
+                graphics.fill(x, y + 1, x + 1, y + height - 1, 0xFF8C5738);
+                graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, 0xFF5A3D31);
+                // 1px inner specular top line
+                graphics.fill(x + 1, y + 2, x + width - 1, y + 3, 0x22FFFFFF);
             } else {
-                graphics.fill(x, y + 1, x + width, y + height - 1, 0x14000000);
+                // Normal: Deep Netherite Slate with Ancient Debris Border
+                graphics.fill(x, y + 1, x + width, y + height - 1, 0xEE1E191D);
+                graphics.fill(x, y + 1, x + width, y + 2, 0xFF3A2B25);
+                graphics.fill(x, y + height - 2, x + width, y + height - 1, 0xFF241A17);
+                graphics.fill(x, y + 1, x + 1, y + height - 1, 0xFF3A2B25);
+                graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, 0xFF241A17);
             }
 
-            // 1. Left Icon Slot (In-Game Sprite / Item / Mod Profile Icon)
+            // 1. Left Icon Slot (Inset Ancient Debris Beveled Frame)
             SearchResultType type = result.getType();
-            graphics.fill(iconBoxX, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, isIconHovered ? 0x44FFFFFF : 0x2E000000);
-            graphics.fill(iconBoxX, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + 1, 0x33FFFFFF);
-            graphics.fill(iconBoxX, iconBoxY + iconBoxSize - 1, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, 0x22000000);
-            graphics.fill(iconBoxX, iconBoxY, iconBoxX + 1, iconBoxY + iconBoxSize, 0x33FFFFFF);
-            graphics.fill(iconBoxX + iconBoxSize - 1, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, 0x22000000);
+            graphics.fill(iconBoxX, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, isIconHovered ? 0xFF1C1619 : 0xFF120E10);
+            graphics.fill(iconBoxX, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + 1, 0xFF4D362C);
+            graphics.fill(iconBoxX, iconBoxY + iconBoxSize - 1, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, 0xFF36241D);
+            graphics.fill(iconBoxX, iconBoxY, iconBoxX + 1, iconBoxY + iconBoxSize, 0xFF4D362C);
+            graphics.fill(iconBoxX + iconBoxSize - 1, iconBoxY, iconBoxX + iconBoxSize, iconBoxY + iconBoxSize, 0xFF36241D);
+            graphics.fill(iconBoxX + 1, iconBoxY + 1, iconBoxX + iconBoxSize - 1, iconBoxY + 2, 0x44000000);
+            graphics.fill(iconBoxX + 1, iconBoxY + 1, iconBoxX + 2, iconBoxY + iconBoxSize - 1, 0x44000000);
 
             net.minecraft.resources.Identifier modTexture = result.getTextureIcon();
             if (modTexture != null) {
@@ -214,47 +228,82 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
             String title = result.getTitle();
             int maxTitleWidth = Math.max(availableWidth / 2, 130);
             String displayTitle = font.plainSubstrByWidth(title, maxTitleWidth);
-            graphics.text(font, displayTitle, curX, line1Y, 0xFFFFFFFF);
+            graphics.text(font, displayTitle, curX, line1Y, 0xFFFFF8F0);
 
             int titleRenderWidth = font.width(displayTitle);
             int valStartX = curX + titleRenderWidth + 6;
             int maxValWidth = availableWidth - titleRenderWidth - 8;
 
             if (isListeningNow) {
-                graphics.text(font, "[Press Any Key...]", valStartX, line1Y, 0xFFFFCC00);
+                float pulse = (float) (0.6 + 0.4 * Math.sin(System.currentTimeMillis() * 0.008));
+                int valAlpha = (int) (pulse * 255);
+                int pulseColor = (valAlpha << 24) | 0x00FFCC00;
+                int pillW = font.width("[Press Any Key...]") + 6;
+                graphics.fill(valStartX - 2, line1Y - 1, valStartX + pillW - 4, line1Y + 10, 0x55B45309);
+                graphics.fill(valStartX - 2, line1Y - 1, valStartX + pillW - 4, line1Y, 0xFFD97706);
+                graphics.text(font, "[Press Any Key...]", valStartX, line1Y, pulseColor);
             } else if (!result.getValue().isEmpty()) {
                 String valStr = "[" + result.getValue() + "]";
                 if (maxValWidth > 20) {
                     String displayVal = font.plainSubstrByWidth(valStr, maxValWidth);
-                    int valColor = isEditHovered ? 0xFF55FFFF : type.getValueColor();
+                    int valW = font.width(displayVal);
+                    graphics.fill(valStartX - 2, line1Y - 1, valStartX + valW + 2, line1Y + 10, 0x33B45309);
+                    graphics.fill(valStartX - 2, line1Y - 1, valStartX + valW + 2, line1Y, 0x66D97706);
+                    int valColor = isEditHovered ? 0xFFFFF0D0 : 0xFFFBBF24;
                     graphics.text(font, displayVal, valStartX, line1Y, valColor);
                 }
             }
 
-            // 4. Line 2: Path / Category (Mod name is shown when expanded in details)
+            // 4. Line 2: Path / Category
             int line2Y = y + 19;
             if (!result.getPath().isEmpty() && availableWidth > 20) {
                 String displayPath = font.plainSubstrByWidth(result.getPath(), availableWidth);
-                graphics.text(font, displayPath, curX, line2Y, 0xFFAAAAAA);
+                graphics.text(font, displayPath, curX, line2Y, 0xFFA89F91);
             }
 
-            // 5. Edit Button (if editable)
+            // 5. Edit Button (Theme 2: Netherite Action Button)
             if (hasEdit) {
                 if (isListeningNow) {
-                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, 0x99FFAA00);
-                    graphics.centeredText(font, "> ? <", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 9) / 2, 0xFFFFFFFF);
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, 0xFF7F1D1D);
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + 1, 0xFFEF4444);
+                    graphics.centeredText(font, "> ? <", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 8) / 2, 0xFFFFF0D0);
+                } else if (isEditHovered) {
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, 0xFFB45309);
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + 1, 0xFFF59E0B);
+                    graphics.fill(editBtnX, editBtnY + editBtnH - 1, editBtnX + editBtnW, editBtnY + editBtnH, 0xFF78350F);
+                    graphics.fill(editBtnX, editBtnY, editBtnX + 1, editBtnY + editBtnH, 0xFFF59E0B);
+                    graphics.fill(editBtnX + editBtnW - 1, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, 0xFF78350F);
+                    graphics.centeredText(font, "Edit", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 8) / 2, 0xFFFFFFFF);
                 } else {
-                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, isEditHovered ? 0x44FFFFFF : 0x1AFFFFFF);
-                    graphics.centeredText(font, "Edit", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 9) / 2, isEditHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, 0xFF362620);
+                    graphics.fill(editBtnX, editBtnY, editBtnX + editBtnW, editBtnY + 1, 0xFF634537);
+                    graphics.fill(editBtnX, editBtnY + editBtnH - 1, editBtnX + editBtnW, editBtnY + editBtnH, 0xFF241A17);
+                    graphics.fill(editBtnX, editBtnY, editBtnX + 1, editBtnY + editBtnH, 0xFF634537);
+                    graphics.fill(editBtnX + editBtnW - 1, editBtnY, editBtnX + editBtnW, editBtnY + editBtnH, 0xFF241A17);
+                    graphics.centeredText(font, "Edit", editBtnX + (editBtnW / 2), editBtnY + (editBtnH - 8) / 2, 0xFFFED7AA);
                 }
             }
 
-            // 6. Expand / Collapse Button (+ / -)
-            graphics.fill(expandBtnX, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, isBtnHovered ? 0x44FFFFFF : 0x1AFFFFFF);
-            String symbol = expanded ? "-" : "+";
-            graphics.centeredText(font, symbol, expandBtnX + (expandBtnSize / 2), expandBtnY + (expandBtnSize - 9) / 2, isBtnHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
+            // 6. Expand / Collapse Button (+ / -) (Theme 2: Netherite Button)
+            if (isBtnHovered) {
+                graphics.fill(expandBtnX, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, 0xFFB45309);
+                graphics.fill(expandBtnX, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + 1, 0xFFF59E0B);
+                graphics.fill(expandBtnX, expandBtnY + expandBtnSize - 1, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, 0xFF78350F);
+                graphics.fill(expandBtnX, expandBtnY, expandBtnX + 1, expandBtnY + expandBtnSize, 0xFFF59E0B);
+                graphics.fill(expandBtnX + expandBtnSize - 1, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, 0xFF78350F);
+                String symbol = expanded ? "-" : "+";
+                graphics.centeredText(font, symbol, expandBtnX + (expandBtnSize / 2), expandBtnY + (expandBtnSize - 8) / 2, 0xFFFFFFFF);
+            } else {
+                graphics.fill(expandBtnX, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, 0xFF362620);
+                graphics.fill(expandBtnX, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + 1, 0xFF634537);
+                graphics.fill(expandBtnX, expandBtnY + expandBtnSize - 1, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, 0xFF241A17);
+                graphics.fill(expandBtnX, expandBtnY, expandBtnX + 1, expandBtnY + expandBtnSize, 0xFF634537);
+                graphics.fill(expandBtnX + expandBtnSize - 1, expandBtnY, expandBtnX + expandBtnSize, expandBtnY + expandBtnSize, 0xFF241A17);
+                String symbol = expanded ? "-" : "+";
+                graphics.centeredText(font, symbol, expandBtnX + (expandBtnSize / 2), expandBtnY + (expandBtnSize - 8) / 2, 0xFFFED7AA);
+            }
 
-            // 7. Expanded Full Details Area (Vanilla hover tooltip-style card)
+            // 7. Expanded Full Details Area (Theme 2: Netherite Slate Details Card)
             if (expanded) {
                 int cardX = curX - 6;
                 int cardY = y + 36;
@@ -262,22 +311,15 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
                 int cardH = (y + height - 4) - cardY;
                 int contentWidth = Math.max(cardW - 14, 100);
 
-                // Authentic Vanilla Tooltip Box
-                // Main dark background
-                graphics.fill(cardX + 1, cardY, cardX + cardW - 1, cardY + cardH, 0xF0100010);
-                graphics.fill(cardX, cardY + 1, cardX + cardW, cardY + cardH - 1, 0xF0100010);
-
-                // Outer border (purple/blue gradient)
-                graphics.fill(cardX + 1, cardY, cardX + cardW - 1, cardY + 1, 0x505000FF);
-                graphics.fill(cardX + 1, cardY + cardH - 1, cardX + cardW - 1, cardY + cardH, 0x5028007F);
-                graphics.fillGradient(cardX, cardY + 1, cardX + 1, cardY + cardH - 1, 0x505000FF, 0x5028007F);
-                graphics.fillGradient(cardX + cardW - 1, cardY + 1, cardX + cardW, cardY + cardH - 1, 0x505000FF, 0x5028007F);
-
-                // Inner border highlight (purple/blue gradient)
-                graphics.fill(cardX + 1, cardY + 1, cardX + cardW - 1, cardY + 2, 0x505000FF);
-                graphics.fill(cardX + 1, cardY + cardH - 2, cardX + cardW - 1, cardY + cardH - 1, 0x5028007F);
-                graphics.fillGradient(cardX + 1, cardY + 2, cardX + 2, cardY + cardH - 2, 0x505000FF, 0x5028007F);
-                graphics.fillGradient(cardX + cardW - 2, cardY + 2, cardX + cardW - 1, cardY + cardH - 2, 0x505000FF, 0x5028007F);
+                // Main Netherite background
+                graphics.fill(cardX, cardY, cardX + cardW, cardY + cardH, 0xF0181518);
+                // Ancient debris bronze borders
+                graphics.fill(cardX, cardY, cardX + cardW, cardY + 1, 0xFF5A3D31);
+                graphics.fill(cardX, cardY + cardH - 1, cardX + cardW, cardY + cardH, 0xFF3D2C25);
+                graphics.fill(cardX, cardY, cardX + 1, cardY + cardH, 0xFF5A3D31);
+                graphics.fill(cardX + cardW - 1, cardY, cardX + cardW, cardY + cardH, 0xFF3D2C25);
+                // Top inner specular line
+                graphics.fill(cardX + 1, cardY + 1, cardX + cardW - 1, cardY + 2, 0x44B45309);
 
                 int innerX = cardX + 7;
                 int curY = cardY + 6;

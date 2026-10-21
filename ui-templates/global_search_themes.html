@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Search - Modern UI Concept Showcase</title>
+    <!-- Google Fonts: Inter for UI, JetBrains Mono for hotkeys/code, Outfit for titles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-title: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition-smooth: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Reset & Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            background: #090a0f radial-gradient(circle at 50% 0%, #1a1e2e 0%, #08090d 80%);
+            color: #e4e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px 60px 20px;
+            overflow-x: hidden;
+        }
+
+        /* Top Bar Header */
+        .showcase-header {
+            text-align: center;
+            max-width: 860px;
+            margin-bottom: 24px;
+        }
+
+        .showcase-header h1 {
+            font-family: var(--font-title);
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffdc73 0%, #ff9800 60%, #e65100 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .showcase-header p {
+            color: #8e9bb0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Theme Picker Switcher */
+        .theme-selector-bar {
+            display: flex;
+            gap: 10px;
+            background: rgba(18, 22, 34, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px;
+            border-radius: 999px;
+            margin-bottom: 28px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .theme-btn {
+            background: transparent;
+            border: none;
+            color: #9aa4b2;
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .theme-btn.active {
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Theme Color Signatures */
+        .theme-btn[data-theme="obsidian-glass"].active {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+        }
+        .theme-btn[data-theme="netherite-rpg"].active {
+            background: linear-gradient(135deg, #b45309, #d97706);
+        }
+        .theme-btn[data-theme="raycast-clean"].active {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .theme-btn[data-theme="ender-twilight"].active {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        }
+
+        /* Mock In-Game Screen Container */
+        .screen-canvas-wrapper {
+            width: 100%;
+            max-width: 1020px;
+            position: relative;
+        }
+
+        .screen-canvas-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 8px;
+            font-size: 0.8rem;
+            color: #717d96;
+            font-family: var(--font-mono);
+        }
+
+        .minecraft-screen {
+            width: 100%;
+            height: 640px;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition-smooth);
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8);
+        }
+
+        /* ========================================================
+           THEME 1: MODERN OBSIDIAN GLASS (Default)
+           ======================================================== */
+        .theme-obsidian-glass {
+            background: rgba(12, 15, 24, 0.88);
+            backdrop-filter: blur(28px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .theme-obsidian-glass .brand-badge {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .theme-obsidian-glass .search-bar-box {
+            background: rgba(25, 30, 46, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 15px rgba(59, 130, 246, 0.1);
+        }
+        .theme-obsidian-glass .search-bar-box:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        .theme-obsidian-glass .sidebar-container {
+            background: rgba(18, 22, 34, 0.55);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .theme-obsidian-glass .filter-item.active {
+            background: rgba(59, 130, 246, 0.18);
+            border-color: rgba(59, 130, 246, 0.45);
+            color: #60a5fa;
+        }
+        .theme-obsidian-glass .filter-item.active .filter-dot {
+            background: #60a5fa;
+            box-shadow: 0 0 8px #3b82f6;
+        }
+        .theme-obsidian-glass .result-card {
+            background: rgba(24, 29, 44, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .theme-obsidian-glass .result-card:hover {
+            background: rgba(33, 40, 60, 0.85);
+            border-color: rgba(59, 130, 246, 0.35);
+            transform: translateY(-1px);
+        }
+        .theme-obsidian-glass .btn-action {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+        }
+        .theme-obsidian-glass .btn-action:hover {
+            background: #3b82f6;
+            border-color: #60a5fa;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        /* ========================================================
+           THEME 2: DEEP NETHERITE & ANCIENT DEBRIS (RPG Aesthetic)
+           ======================================================== */
+        .theme-netherite-rpg {
+            background: #141215 radial-gradient(circle at 50% 20%, #2b1f24 0%, #121013 90%);
+            border: 2px solid #5a3d31;
+            box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.8), 0 25px 60px rgba(0, 0, 0, 0.9);
+        }
+        .theme-netherite-rpg .brand-badge {
+            color: #f59e0b;
+            text-shadow: 0 2px 4px #000000, 0 0 10px rgba(245, 158, 11, 0.3);
+        }
+        .theme-netherite-rpg .search-bar-box {
+            background: #1a1619;
+            border: 2px solid #4a342e;
+            box-shadow: inset 0 3px 6px #0d0a0b;
+        }
+        .theme-netherite-rpg .search-bar-box:focus-within {
+            border-color: #d97706;
+            box-shadow: inset 0 3px 6px #0d0a0b, 0 0 12px rgba(217, 119, 6, 0.35);
+        }
+        .theme-netherite-rpg .sidebar-container {
+            background: #181518;
+            border-right: 2px solid #3d2c25;
+        }
+        .theme-netherite-rpg .filter-item {
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+        .theme-netherite-rpg .filter-item.active {
+            background: linear-gradient(90deg, #442a22, #2d1c17);
+            border-color: #b45309;
+            color: #fbbf24;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        .theme-netherite-rpg .filter-item.active .filter-dot {
+            background: #fbbf24;
+            box-shadow: 0 0 8px #f59e0b;
+        }
+        .theme-netherite-rpg .result-card {
+            background: #1e191d;
+            border: 1px solid #3a2b25;
+            border-radius: 4px;
+        }
+        .theme-netherite-rpg .result-card:hover {
+            background: #272025;
+            border-color: #8c5738;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .theme-netherite-rpg .item-icon-box {
+            border: 2px solid #4d362c !important;
+            background: #120e10 !important;
+        }
+        .theme-netherite-rpg .btn-action {
+            background: #362620;
+            border: 1px solid #634537;
+            color: #fed7aa;
+            border-radius: 4px;
+        }
+        .theme-netherite-rpg .btn-action:hover {
+            background: #b45309;
+            border-color: #f59e0b;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(217, 119, 6, 0.4);
+        }
+
+        /* ========================================================
+           THEME 3: RAYCAST CLEAN (Minimalist Spotlight)
+           ======================================================== */
+        .theme-raycast-clean {
+            background: #0f1115;
+            border: 1px solid #222731;
+        }
+        .theme-raycast-clean .brand-badge {
+            color: #f1f5f9;
+            font-weight: 700;
+        }
+        .theme-raycast-clean .search-bar-box {
+            background: #161922;
+            border: 1px solid #282f3d;
+            border-radius: 10px;
+        }
+        .theme-raycast-clean .search-bar-box:focus-within {
+            border-color: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        .theme-raycast-clean .sidebar-container {
+            background: #12151b;
+            border-right: 1px solid #1e232d;
+        }
+        .theme-raycast-clean .filter-item {
+            border-radius: 6px;
+        }
+        .theme-raycast-clean .filter-item.active {
+            background: #1e262c;
+            color: #34d399;
+            border-color: rgba(52, 211, 153, 0.25);
+        }
+        .theme-raycast-clean .filter-item.active .filter-dot {
+            background: #10b981;
+        }
+        .theme-raycast-clean .result-card {
+            background: #141820;
+            border: 1px solid #1f2532;
+            border-radius: 8px;
+        }
+        .theme-raycast-clean .result-card:hover {
+            background: #1a202c;
+            border-color: #2e384d;
+        }
+        .theme-raycast-clean .btn-action {
+            background: #202634;
+            border: 1px solid #2d3648;
+            border-radius: 6px;
+            color: #94a3b8;
+        }
+        .theme-raycast-clean .btn-action:hover {
+            background: #10b981;
+            border-color: #34d399;
+            color: #ffffff;
+        }
+
+        /* ========================================================
+           THEME 4: ENDER TWILIGHT & AMETHYST (Mystical Glow)
+           ======================================================== */
+        .theme-ender-twilight {
+            background: #0d0a17 radial-gradient(circle at 80% 10%, #201338 0%, #0d0a17 80%);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            box-shadow: 0 20px 60px rgba(15, 10, 30, 0.8), 0 0 40px rgba(147, 51, 234, 0.12);
+        }
+        .theme-ender-twilight .brand-badge {
+            background: linear-gradient(90deg, #c084fc, #e879f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .theme-ender-twilight .search-bar-box {
+            background: rgba(26, 19, 44, 0.7);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+        .theme-ender-twilight .search-bar-box:focus-within {
+            border-color: #a855f7;
+            box-shadow: 0 0 16px rgba(168, 85, 247, 0.35);
+        }
+        .theme-ender-twilight .sidebar-container {
+            background: rgba(18, 14, 29, 0.65);
+            border-right: 1px solid rgba(168, 85, 247, 0.15);
+        }
+        .theme-ender-twilight .filter-item.active {
+            background: rgba(147, 51, 234, 0.2);
+            color: #d8b4fe;
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 12px rgba(147, 51, 234, 0.2);
+        }
+        .theme-ender-twilight .filter-item.active .filter-dot {
+            background: #c084fc;
+            box-shadow: 0 0 8px #a855f7;
+        }
+        .theme-ender-twilight .result-card {
+            background: rgba(28, 20, 48, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.14);
+        }
+        .theme-ender-twilight .result-card:hover {
+            background: rgba(38, 27, 66, 0.75);
+            border-color: rgba(168, 85, 247, 0.45);
+            box-shadow: 0 0 15px rgba(147, 51, 234, 0.2);
+        }
+        .theme-ender-twilight .btn-action {
+            background: rgba(147, 51, 234, 0.18);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #f3e8ff;
+        }
+        .theme-ender-twilight .btn-action:hover {
+            background: #9333ea;
+            border-color: #c084fc;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(192, 132, 252, 0.5);
+        }
+
+
+        /* ========================================================
+           SCREEN INTERNAL LAYOUT
+           ======================================================== */
+        .screen-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px 12px 18px;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .screen-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .screen-brand .compass-icon {
+            font-size: 1.25rem;
+            filter: drop-shadow(0 2px 6px rgba(255, 200, 0, 0.4));
+        }
+
+        .screen-brand .brand-badge {
+            font-family: var(--font-title);
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        /* Search Input */
+        .search-bar-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            height: 42px;
+            border-radius: 10px;
+            transition: var(--transition-smooth);
+            gap: 10px;
+        }
+
+        .search-icon-symbol {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .search-input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: var(--font-sans);
+        }
+
+        .search-input-field::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .clear-search-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #94a3b8;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .clear-search-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .kbd-hint-chip {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            padding: 3px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.02em;
+        }
+
+        .rescan-top-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            height: 42px;
+            padding: 0 16px;
+            border-radius: 10px;
+            font-size: 0.86rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .rescan-top-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        /* Screen Main Area (Sidebar + Results) */
+        .screen-main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Left Sidebar Categories */
+        .sidebar-container {
+            width: 210px;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 10px;
+            gap: 5px;
+            overflow-y: auto;
+        }
+
+        .sidebar-heading {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            padding: 4px 10px 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.86rem;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            border: 1px solid transparent;
+            user-select: none;
+        }
+
+        .filter-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f1f5f9;
+        }
+
+        .filter-left-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #475569;
+            transition: var(--transition-smooth);
+        }
+
+        .filter-item .category-icon {
+            font-size: 0.95rem;
+            width: 18px;
+            text-align: center;
+        }
+
+        .filter-badge-count {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: #64748b;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 2px 6px;
+            border-radius: 99px;
+        }
+
+        .filter-item.active .filter-badge-count {
+            background: rgba(255, 255, 255, 0.15);
+            color: inherit;
+        }
+
+        /* Keybind modifier toggle */
+        .keyval-toggle-row {
+            margin-top: 4px;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+        .keyval-toggle-row input {
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        /* Results Panel */
+        .results-panel-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 12px 16px;
+            gap: 8px;
+        }
+
+        /* Scrollbar */
+        .results-panel-container::-webkit-scrollbar,
+        .sidebar-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .results-panel-container::-webkit-scrollbar-thumb,
+        .sidebar-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.14);
+            border-radius: 3px;
+        }
+
+        /* Result Card Item */
+        .result-card {
+            display: flex;
+            align-items: center;
+            padding: 9px 12px;
+            border-radius: 10px;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .item-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+        }
+
+        .item-content-col {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .item-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .item-title-text {
+            font-size: 0.94rem;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-value-pill {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 5px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            white-space: nowrap;
+        }
+
+        .item-value-pill.listening {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.5);
+            animation: pulse-border 1.2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.03); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .item-path-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #7a889b;
+        }
+
+        .tag-pill {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 1px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.04em;
+        }
+
+        .tag-keybind { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+        .tag-setting { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+        .tag-item { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+        .tag-mod { background: rgba(168, 85, 247, 0.18); color: #c084fc; }
+        .tag-enchantment { background: rgba(236, 72, 153, 0.18); color: #f472b6; }
+        .tag-biome { background: rgba(20, 184, 166, 0.18); color: #2dd4bf; }
+
+        .item-actions-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-action {
+            height: 28px;
+            padding: 0 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            white-space: nowrap;
+        }
+
+        .btn-action.btn-icon-only {
+            width: 28px;
+            padding: 0;
+            justify-content: center;
+        }
+
+        /* Screen Footer Info */
+        .screen-footer-bar {
+            height: 38px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            font-size: 0.8rem;
+            color: #718096;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .footer-shortcuts {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .notification-toast {
+            color: #34d399;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Comparison Notes Section */
+        .design-breakdown-card {
+            width: 100%;
+            max-width: 1020px;
+            margin-top: 36px;
+            background: rgba(16, 20, 32, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+        }
+
+        .design-breakdown-card h3 {
+            font-family: var(--font-title);
+            font-size: 1.25rem;
+            color: #f8fafc;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .grid-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .feature-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .feature-box h4 {
+            font-size: 0.95rem;
+            color: #60a5fa;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .feature-box p {
+            font-size: 0.84rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+        .code-snippet {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            background: rgba(0, 0, 0, 0.4);
+            color: #fbbf24;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="showcase-header">
+        <h1>Global Search • Modern UI Templates</h1>
+        <p>Interactive concept showcase for next-generation Minecraft mod menus. Switch between the 4 themes below to see how layouts, colors, hotkeys, and card hierarchy can be elevated from the vanilla gray boxes.</p>
+    </div>
+
+    <!-- Theme Switcher -->
+    <div class="theme-selector-bar">
+        <button class="theme-btn active" data-theme="obsidian-glass" onclick="switchTheme('obsidian-glass', this)">
+            <span>💎</span> Modern Obsidian Glass
+        </button>
+        <button class="theme-btn" data-theme="netherite-rpg" onclick="switchTheme('netherite-rpg', this)">
+            <span>⚔️</span> Deep Netherite & Ancient Debris
+        </button>
+        <button class="theme-btn" data-theme="raycast-clean" onclick="switchTheme('raycast-clean', this)">
+            <span>⚡</span> Raycast Clean
+        </button>
+        <button class="theme-btn" data-theme="ender-twilight" onclick="switchTheme('ender-twilight', this)">
+            <span>🔮</span> Ender Twilight & Amethyst
+        </button>
+    </div>
+
+    <!-- Screen Canvas Container -->
+    <div class="screen-canvas-wrapper">
+        <div class="screen-canvas-header-info">
+            <span>PREVIEW: GlobalSearchScreen.java (1920x1080 GUI Scale 3)</span>
+            <span>PRESS ESC OR CLICK OUTSIDE TO RETURN</span>
+        </div>
+
+        <div id="minecraftScreen" class="minecraft-screen theme-obsidian-glass">
+            
+            <!-- Top Search Bar Header -->
+            <div class="screen-top-bar">
+                <div class="screen-brand">
+                    <span class="compass-icon">🧭</span>
+                    <span class="brand-badge">Global Search</span>
+                </div>
+
+                <div class="search-bar-box">
+                    <span class="search-icon-symbol">🔍</span>
+                    <input type="text" id="searchInput" class="search-input-field" placeholder="Search keybinds, settings, items, dimensions, biomes, mods..." oninput="handleSearch(this.value)">
+                    <button id="clearBtn" class="clear-search-btn" style="display:none;" onclick="clearSearch()">✕</button>
+                    <span class="kbd-hint-chip">Ctrl + F</span>
+                </div>
+
+                <button class="rescan-top-btn" onclick="triggerToast('Index refreshed! Scanned 748 entries in 12ms')">
+                    <span>↻</span> Rescan
+                </button>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="screen-main-content">
+                
+                <!-- Left Sidebar Filters -->
+                <div class="sidebar-container">
+                    <div class="sidebar-heading">
+                        <span>CATEGORIES</span>
+                        <span>748</span>
+                    </div>
+
+                    <div class="filter-item active" onclick="selectFilter('ALL', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">✦</span>
+                            <span>All Results</span>
+                        </div>
+                        <span class="filter-badge-count">748</span>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('KEYBIND', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">⌨️</span>
+                            <span>Keybinds</span>
+                        </div>
+                        <span class="filter-badge-count">142</span>
+                    </div>
+
+                    <div id="keyValOption" class="keyval-toggle-row" style="display: none;">
+                        <input type="checkbox" id="keyValCheck" onchange="toggleKeyVal(this.checked)">
+                        <label for="keyValCheck">Search by Key Value</label>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('SETTING', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">⚙️</span>
+                            <span>Settings</span>
+                        </div>
+                        <span class="filter-badge-count">96</span>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('ITEM', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">📦</span>
+                            <span>Items & Blocks</span>
+                        </div>
+                        <span class="filter-badge-count">318</span>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('ENCHANTMENT', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">✨</span>
+                            <span>Enchantments</span>
+                        </div>
+                        <span class="filter-badge-count">38</span>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('POTION', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">🧪</span>
+                            <span>Potions & Effects</span>
+                        </div>
+                        <span class="filter-badge-count">44</span>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('BIOME', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">🌲</span>
+                            <span>Biomes</span>
+                        </div>
+                        <span class="filter-badge-count">62</span>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('DIMENSION', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">🌌</span>
+                            <span>Dimensions</span>
+                        </div>
+                        <span class="filter-badge-count">3</span>
+                    </div>
+
+                    <div class="filter-item" onclick="selectFilter('MOD', this)">
+                        <div class="filter-left-group">
+                            <span class="filter-dot"></span>
+                            <span class="category-icon">🧩</span>
+                            <span>Mods</span>
+                        </div>
+                        <span class="filter-badge-count">19</span>
+                    </div>
+                </div>
+
+                <!-- Right Results List -->
+                <div id="resultsList" class="results-panel-container">
+                    
+                    <!-- Card 1: Keybind -->
+                    <div class="result-card" onclick="copyCard('Attack / Destroy', 'Left Button')">
+                        <div class="item-icon-box">🪓</div>
+                        <div class="item-content-col">
+                            <div class="item-title-row">
+                                <span class="item-title-text">Attack / Destroy</span>
+                                <span class="item-value-pill">[Left Button]</span>
+                                <span class="tag-pill tag-keybind">Keybind</span>
+                            </div>
+                            <div class="item-path-row">
+                                <span>Options</span>
+                                <span>›</span>
+                                <span>Controls</span>
+                                <span>›</span>
+                                <span>Gameplay</span>
+                            </div>
+                        </div>
+                        <div class="item-actions-row">
+                            <button class="btn-action" onclick="event.stopPropagation(); startListening(this, 'Attack / Destroy')">
+                                <span>✏️</span> Edit
+                            </button>
+                            <button class="btn-action btn-icon-only" title="More info" onclick="event.stopPropagation(); toggleExpand(this)">
+                                <span>＋</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Setting -->
+                    <div class="result-card" onclick="copyCard('Render Distance', '16 Chunks')">
+                        <div class="item-icon-box">👁️</div>
+                        <div class="item-content-col">
+                            <div class="item-title-row">
+                                <span class="item-title-text">Render Distance</span>
+                                <span class="item-value-pill" style="color: #6ee7b7; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3);">[16 Chunks]</span>
+                                <span class="tag-pill tag-setting">Setting</span>
+                            </div>
+                            <div class="item-path-row">
+                                <span>Options</span>
+                                <span>›</span>
+                                <span>Video Settings</span>
+                                <span>›</span>
+                                <span>General</span>
+                            </div>
+                        </div>
+                        <div class="item-actions-row">
+                            <button class="btn-action" onclick="event.stopPropagation(); triggerToast('Opened Video Settings slider for Render Distance')">
+                                <span>⚙️</span> Adjust
+                            </button>
+                            <button class="btn-action btn-icon-only" onclick="event.stopPropagation(); toggleExpand(this)">
+                                <span>＋</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Keybind Listening state sample -->
+                    <div class="result-card" onclick="copyCard('Walk Forward', 'W')">
+                        <div class="item-icon-box">👟</div>
+                        <div class="item-content-col">
+                            <div class="item-title-row">
+                                <span class="item-title-text">Walk Forward</span>
+                                <span class="item-value-pill listening" id="sampleListeningPill">[Press Any Key...]</span>
+                                <span class="tag-pill tag-keybind">Keybind</span>
+                            </div>
+                            <div class="item-path-row">
+                                <span>Options</span>
+                                <span>›</span>
+                                <span>Controls</span>
+                                <span>›</span>
+                                <span>Movement</span>
+                            </div>
+                        </div>
+                        <div class="item-actions-row">
+                            <button class="btn-action" style="background: rgba(239, 68, 68, 0.25); border-color: #f87171; color: #fff;" onclick="event.stopPropagation(); resolveListening(this)">
+                                <span>⌨️</span> Cancel
+                            </button>
+                            <button class="btn-action btn-icon-only" onclick="event.stopPropagation(); toggleExpand(this)">
+                                <span>＋</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Enchantment -->
+                    <div class="result-card" onclick="copyCard('Mending', 'Max Level: I')">
+                        <div class="item-icon-box">📖</div>
+                        <div class="item-content-col">
+                            <div class="item-title-row">
+                                <span class="item-title-text">Mending</span>
+                                <span class="item-value-pill" style="color: #f472b6; background: rgba(236, 72, 153, 0.15); border-color: rgba(236, 72, 153, 0.3);">[Treasure]</span>
+                                <span class="tag-pill tag-enchantment">Enchantment</span>
+                            </div>
+                            <div class="item-path-row">
+                                <span>minecraft:mending</span>
+                                <span>›</span>
+                                <span>Restores durability using XP orbs</span>
+                            </div>
+                        </div>
+                        <div class="item-actions-row">
+                            <button class="btn-action" onclick="event.stopPropagation(); triggerToast('Copied enchantment ID /give command')">
+                                <span>📋</span> Copy
+                            </button>
+                            <button class="btn-action btn-icon-only" onclick="event.stopPropagation(); toggleExpand(this)">
+                                <span>＋</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: Biome -->
+                    <div class="result-card" onclick="copyCard('Cherry Grove', 'minecraft:cherry_grove')">
+                        <div class="item-icon-box">🌸</div>
+                        <div class="item-content-col">
+                            <div class="item-title-row">
+                                <span class="item-title-text">Cherry Grove</span>
+                                <span class="item-value-pill" style="color: #2dd4bf; background: rgba(20, 184, 166, 0.15); border-color: rgba(20, 184, 166, 0.3);">[Overworld]</span>
+                                <span class="tag-pill tag-biome">Biome</span>
+                            </div>
+                            <div class="item-path-row">
+                                <span>minecraft:cherry_grove</span>
+                                <span>›</span>
+                                <span>Mountain slopes with pink petals</span>
+                            </div>
+                        </div>
+                        <div class="item-actions-row">
+                            <button class="btn-action" onclick="event.stopPropagation(); triggerToast('Copied /locate biome minecraft:cherry_grove')">
+                                <span>📍</span> Locate
+                            </button>
+                            <button class="btn-action btn-icon-only" onclick="event.stopPropagation(); toggleExpand(this)">
+                                <span>＋</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 6: Mod Item -->
+                    <div class="result-card" onclick="copyCard('Xaero\'s World Map', 'v1.39.0')">
+                        <div class="item-icon-box">🗺️</div>
+                        <div class="item-content-col">
+                            <div class="item-title-row">
+                                <span class="item-title-text">Xaero's World Map</span>
+                                <span class="item-value-pill" style="color: #c084fc; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3);">[v1.39.0]</span>
+                                <span class="tag-pill tag-mod">Mod</span>
+                            </div>
+                            <div class="item-path-row">
+                                <span>xaeroworldmap</span>
+                                <span>›</span>
+                                <span>Fullscreen map client mod</span>
+                            </div>
+                        </div>
+                        <div class="item-actions-row">
+                            <button class="btn-action" onclick="event.stopPropagation(); triggerToast('Opened Xaero\'s World Map config screen')">
+                                <span>⚙️</span> Config
+                            </button>
+                            <button class="btn-action btn-icon-only" onclick="event.stopPropagation(); toggleExpand(this)">
+                                <span>＋</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Screen Footer -->
+            <div class="screen-footer-bar">
+                <div class="footer-stats" id="footerStats">
+                    Showing <strong>6</strong> of <strong>748</strong> results
+                </div>
+                <div id="footerNotification" class="notification-toast" style="display: none;">
+                    ✓ Copied to clipboard: Attack / Destroy
+                </div>
+                <div class="footer-shortcuts">
+                    <span class="shortcut-item"><span class="kbd-hint-chip">Enter</span> Select / Edit</span>
+                    <span class="shortcut-item"><span class="kbd-hint-chip">↑ ↓</span> Navigate</span>
+                    <span class="shortcut-item"><span class="kbd-hint-chip">Esc</span> Close</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Implementation Guidance & Minecraft Translation Table -->
+    <div class="design-breakdown-card">
+        <h3>🛠️ How to Implement These Themes in Minecraft 26.3 GuiGraphics</h3>
+        <div class="grid-features">
+            <div class="feature-box">
+                <h4>✨ Frosted Glass & Translucency</h4>
+                <p>Use layered translucent fills with subtle top-highlight borders to achieve glass without shader overhead.</p>
+                <div class="code-snippet">graphics.fill(x, y, x + w, y + h, 0xCC101522);</div>
+                <div class="code-snippet">graphics.fill(x, y, x + w, y + 1, 0x33FFFFFF); // 1px specular</div>
+            </div>
+
+            <div class="feature-box">
+                <h4>🏷️ Category Pill Badges</h4>
+                <p>Render rounded or beveled category chips next to result titles with dedicated hex accent colors for instant scanning.</p>
+                <div class="code-snippet">SearchResultType.getValueColor() / getBadgeColor()</div>
+            </div>
+
+            <div class="feature-box">
+                <h4>⌨️ Interactive Listening Glow</h4>
+                <p>Pulse the keybind editing state with a distinct amber or red border so players immediately know Minecraft is capturing their input.</p>
+                <div class="code-snippet">Math.sin(System.currentTimeMillis() * 0.005f)</div>
+            </div>
+
+            <div class="feature-box">
+                <h4>🎨 In-Game Theme Config Option</h4>
+                <p>A dropdown setting in `GlobalSearchConfig` allowing players to switch between Obsidian, Netherite, Raycast, and Ender themes.</p>
+                <div class="code-snippet">enum SearchGuiTheme { OBSIDIAN, NETHERITE, RAYCAST, ENDER }</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Script -->
+    <script>
+        function switchTheme(themeKey, btnElement) {
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            const screen = document.getElementById('minecraftScreen');
+            screen.className = 'minecraft-screen theme-' + themeKey;
+        }
+
+        function handleSearch(val) {
+            const clearBtn = document.getElementById('clearBtn');
+            clearBtn.style.display = val.trim() ? 'flex' : 'none';
+
+            const cards = document.querySelectorAll('.result-card');
+            let count = 0;
+            const query = val.toLowerCase().trim();
+
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (!query || text.includes(query)) {
+                    card.style.display = 'flex';
+                    count++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.getElementById('footerStats').innerHTML = `Showing <strong>${count}</strong> of <strong>748</strong> results`;
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            handleSearch('');
+            input.focus();
+        }
+
+        function selectFilter(filterName, elem) {
+            document.querySelectorAll('.filter-item').forEach(item => item.classList.remove('active'));
+            elem.classList.add('active');
+
+            const keyValRow = document.getElementById('keyValOption');
+            if (filterName === 'KEYBIND') {
+                keyValRow.style.display = 'flex';
+            } else {
+                keyValRow.style.display = 'none';
+            }
+
+            triggerToast(`Filtered category: ${filterName}`);
+        }
+
+        function toggleKeyVal(checked) {
+            triggerToast(checked ? 'Keybind search mode: By Key Value enabled' : 'Keybind search mode: Name search');
+        }
+
+        function copyCard(title, val) {
+            triggerToast(`✓ Copied: ${title} [${val}]`);
+        }
+
+        function startListening(btn, title) {
+            const card = btn.closest('.result-card');
+            const pill = card.querySelector('.item-value-pill');
+            pill.classList.add('listening');
+            pill.innerText = '[Press Any Key...]';
+            btn.innerHTML = '<span>⌨️</span> Cancel';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                resolveListening(btn, title, pill);
+            };
+            triggerToast(`Press any key to rebind '${title}'`);
+        }
+
+        function resolveListening(btn, title, pill) {
+            pill.classList.remove('listening');
+            pill.innerText = '[Right Click]';
+            btn.innerHTML = '<span>✏️</span> Edit';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                startListening(btn, title);
+            };
+            triggerToast(`Rebound '${title}' to [Right Click]`);
+        }
+
+        function toggleExpand(btn) {
+            triggerToast('Expanded result details & tag metadata');
+        }
+
+        let toastTimeout = null;
+        function triggerToast(message) {
+            const toast = document.getElementById('footerNotification');
+            const stats = document.getElementById('footerStats');
+            toast.innerText = message;
+            toast.style.display = 'flex';
+            stats.style.display = 'none';
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.style.display = 'none';
+                stats.style.display = 'block';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
