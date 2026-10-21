@@ -27,74 +27,120 @@ public class StructureIndexProvider implements SearchIndexProvider {
 
     @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
-        try {
-            HolderLookup.Provider lookup = (minecraft != null && minecraft.level != null)
-                    ? minecraft.level.registryAccess()
-                    : VanillaRegistries.createWorldLookup();
+        // 1. Singleplayer IntegratedServer lookup (has ALL vanilla + modded structures in the world!)
+        if (minecraft != null && minecraft.getSingleplayerServer() != null) {
+            try {
+                var srvLookup = minecraft.getSingleplayerServer().registryAccess().lookup(Registries.STRUCTURE);
+                if (srvLookup.isPresent()) {
+                    srvLookup.get().listElements().forEach(ref -> {
+                        try {
+                            Identifier id = ref.key().identifier();
+                            addStructureEntry(id, results, seenKeys);
+                        } catch (Throwable ignored) {}
+                    });
+                }
+            } catch (Throwable ignored) {}
+        }
 
-            lookup.lookup(Registries.STRUCTURE).ifPresent(reg -> {
-                reg.listElements().forEach(ref -> {
-                    try {
-                        Identifier id = ref.key().identifier();
-                        String path = id.toString();
-                        String key = SearchResultType.STRUCTURE.name() + ":" + path.toLowerCase(Locale.ROOT);
-
-                        if (seenKeys.add(key)) {
-                            String modId = id.getNamespace();
-                            String modName = Services.PLATFORM.getModName(modId);
-                            String transKey = "structure." + id.getNamespace() + "." + id.getPath();
-                            String transTitle = Component.translatable(transKey).getString();
-                            final String title = transTitle.equals(transKey) ? ProviderUtils.formatCamelCase(id.getPath()) : transTitle;
-
-                            ItemStack icon = pickStructureIcon(id);
-                            String locateCmd = "/locate structure " + path;
-                            String desc = "World structure in " + modName + ". Locate with: " + locateCmd;
-
-                            List<String> actions = List.of("Copy /locate", "Locate in Chat", "Copy Structure ID");
-
-                            SearchResult result = new SearchResult(
-                                    SearchResultType.STRUCTURE,
-                                    path,
-                                    title,
-                                    path,
-                                    "Structure",
-                                    modId,
-                                    modName,
-                                    icon,
-                                    null,
-                                    desc,
-                                    true,
-                                    (mc, screen, onValueChanged) -> {
-                                        mc.gui.setScreen(new GlobalSettingEditScreen(
-                                                screen,
-                                                new SearchResult(SearchResultType.STRUCTURE, path, title, path, "Copy /locate", modId, modName, icon),
-                                                GlobalSettingEditScreen.SettingType.CHOICE,
-                                                actions,
-                                                "Copy /locate",
-                                                selectedAction -> {
-                                                    if ("Locate in Chat".equalsIgnoreCase(selectedAction)) {
-                                                        if (mc.player != null && mc.player.connection != null) {
-                                                            mc.player.connection.sendCommand("locate structure " + path);
-                                                        }
-                                                    } else if ("Copy Structure ID".equalsIgnoreCase(selectedAction)) {
-                                                        mc.keyboardHandler.setClipboard(path);
-                                                    } else {
-                                                        mc.keyboardHandler.setClipboard(locateCmd);
-                                                    }
-                                                    return true;
-                                                },
-                                                onValueChanged
-                                        ));
-                                        return true;
-                                    },
-                                    StructureIndexProvider.this
-                            );
-                            results.add(result);
-                        }
-                    } catch (Throwable ignored) {}
+        // 2. Client-level registry lookup fallback (if present in level)
+        if (minecraft != null && minecraft.level != null) {
+            try {
+                minecraft.level.registryAccess().lookup(Registries.STRUCTURE).ifPresent(reg -> {
+                    reg.listElements().forEach(ref -> {
+                        try {
+                            addStructureEntry(ref.key().identifier(), results, seenKeys);
+                        } catch (Throwable ignored) {}
+                    });
                 });
-            });
+            } catch (Throwable ignored) {}
+        }
+
+        // 3. BuiltinStructures reflection (All 50+ vanilla built-in structures)
+        try {
+            for (java.lang.reflect.Field field : net.minecraft.world.level.levelgen.structure.BuiltinStructures.class.getFields()) {
+                if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && net.minecraft.resources.ResourceKey.class.isAssignableFrom(field.getType())) {
+                    Object obj = field.get(null);
+                    if (obj instanceof net.minecraft.resources.ResourceKey<?> key) {
+                        addStructureEntry(key.identifier(), results, seenKeys);
+                    }
+                }
+            }
         } catch (Throwable ignored) {}
+
+        // 4. Guaranteed Vanilla Structures Safety Net Fallback
+        String[] fallbackStructures = new String[]{
+                "ancient_city", "bastion_remnant", "buried_treasure", "desert_pyramid",
+                "end_city", "fortress", "igloo", "jungle_pyramid", "mansion",
+                "mineshaft", "mineshaft_mesa", "monument", "nether_fossil",
+                "ocean_ruin_cold", "ocean_ruin_warm", "pillager_outpost", "ruined_portal",
+                "ruined_portal_desert", "ruined_portal_jungle", "ruined_portal_mountain",
+                "ruined_portal_nether", "ruined_portal_ocean", "ruined_portal_swamp",
+                "shipwreck", "shipwreck_beached", "stronghold", "swamp_hut", "trail_ruins",
+                "trial_chambers", "village_desert", "village_plains", "village_savanna",
+                "village_snowy", "village_taiga"
+        };
+        for (String structName : fallbackStructures) {
+            addStructureEntry(Identifier.fromNamespaceAndPath("minecraft", structName), results, seenKeys);
+        }
+    }
+
+    private void addStructureEntry(Identifier id, List<SearchResult> results, Set<String> seenKeys) {
+        if (id == null) return;
+        String path = id.toString();
+        String key = SearchResultType.STRUCTURE.name() + ":" + path.toLowerCase(Locale.ROOT);
+
+        if (seenKeys.add(key)) {
+            String modId = id.getNamespace();
+            String modName = Services.PLATFORM.getModName(modId);
+            String transKey = "structure." + id.getNamespace() + "." + id.getPath();
+            String transTitle = Component.translatable(transKey).getString();
+            final String title = transTitle.equals(transKey) ? ProviderUtils.formatCamelCase(id.getPath()) : transTitle;
+
+            ItemStack icon = pickStructureIcon(id);
+            String locateCmd = "/locate structure " + path;
+            String desc = "World structure in " + modName + ". Locate with: " + locateCmd;
+
+            List<String> actions = List.of("Copy /locate", "Locate in Chat", "Copy Structure ID");
+
+            SearchResult result = new SearchResult(
+                    SearchResultType.STRUCTURE,
+                    path,
+                    title,
+                    path,
+                    "Structure",
+                    modId,
+                    modName,
+                    icon,
+                    null,
+                    desc,
+                    true,
+                    (mc, screen, onValueChanged) -> {
+                        mc.gui.setScreen(new GlobalSettingEditScreen(
+                                screen,
+                                new SearchResult(SearchResultType.STRUCTURE, path, title, path, "Copy /locate", modId, modName, icon),
+                                GlobalSettingEditScreen.SettingType.CHOICE,
+                                actions,
+                                "Copy /locate",
+                                selectedAction -> {
+                                    if ("Locate in Chat".equalsIgnoreCase(selectedAction)) {
+                                        if (mc.player != null && mc.player.connection != null) {
+                                            mc.player.connection.sendCommand("locate structure " + path);
+                                        }
+                                    } else if ("Copy Structure ID".equalsIgnoreCase(selectedAction)) {
+                                        mc.keyboardHandler.setClipboard(path);
+                                    } else {
+                                        mc.keyboardHandler.setClipboard(locateCmd);
+                                    }
+                                    return true;
+                                },
+                                onValueChanged
+                        ));
+                        return true;
+                    },
+                    StructureIndexProvider.this
+            );
+            results.add(result);
+        }
     }
 
     private ItemStack pickStructureIcon(Identifier id) {

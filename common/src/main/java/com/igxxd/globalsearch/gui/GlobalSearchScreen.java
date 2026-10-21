@@ -26,9 +26,11 @@ public class GlobalSearchScreen extends Screen {
     private final List<SearchResult> filteredResults = new ArrayList<>();
 
     private EditBox searchBox;
+    private CategoryNavigationList categoryList;
     private SearchResultList resultList;
     private SearchResultType currentFilter = SearchResultType.ALL;
     private boolean searchByKeyValue = false;
+    private boolean isIndexing = false;
     private static String savedSearchQuery = "";
 
     private String copiedNotification = null;
@@ -58,7 +60,19 @@ public class GlobalSearchScreen extends Screen {
     @Override
     protected void init() {
         if (this.minecraft != null) {
-            this.allIndexedResults = SearchIndexer.getOrIndex(this.minecraft);
+            if (SearchIndexer.hasCachedResults()) {
+                this.allIndexedResults = SearchIndexer.getCachedResults();
+            } else {
+                this.isIndexing = true;
+                SearchIndexer.indexAllAsync(this.minecraft, results -> {
+                    this.allIndexedResults = results;
+                    this.isIndexing = false;
+                    if (this.categoryList != null) {
+                        this.categoryList.rebuildEntries();
+                    }
+                    updateFilter();
+                });
+            }
         }
 
         int sideMargin = 12;
@@ -132,48 +146,17 @@ public class GlobalSearchScreen extends Screen {
         int listWidth = this.width - listX - sideMargin;
         int listHeight = navHeight;
 
-        // 4. Left Navigator Buttons with Category Icons and Live Counts
-        List<SearchResultType> filterTypes = SearchResultType.getAllCategories();
-
-        int btnWidth = navWidth - 8;
-        int totalItems = filterTypes.size() + (this.currentFilter.equals(SearchResultType.KEYBIND) ? 1 : 0);
-        int availableH = navHeight - 20;
-        int btnHeight = Math.max(13, Math.min(18, (availableH - (totalItems * 2)) / Math.max(1, totalItems)));
-        int spacing = Math.max(1, Math.min(2, (availableH - (totalItems * btnHeight)) / Math.max(1, totalItems)));
-        int btnY = navY + 18;
-
-        for (SearchResultType type : filterTypes) {
-            int currentY = btnY;
-            boolean active = this.currentFilter.equals(type);
-            int count = getCategoryResultCount(type);
-            ThemedButton btn = new ThemedButton(
-                    navX + 4,
-                    currentY,
-                    btnWidth,
-                    btnHeight,
-                    Component.literal(type.getLabel()),
-                    () -> {
-                        this.currentFilter = type;
-                        this.rebuildWidgets();
-                    }
-            ).setActiveThemeHighlight(active).setIconPrefix(type.getCategoryIcon()).setBadgeCount(count);
-            this.addRenderableWidget(btn);
-            btnY += btnHeight + spacing;
-
-            // If KEYBIND filter is active, add "By Key Value" Checkbox option underneath
-            if (type.equals(SearchResultType.KEYBIND) && this.currentFilter.equals(SearchResultType.KEYBIND)) {
-                Checkbox keyValCheckbox = Checkbox.builder(Component.literal("By Key Value"), this.font)
-                        .pos(navX + 6, btnY)
-                        .selected(this.searchByKeyValue)
-                        .onValueChange((cb, val) -> {
-                            this.searchByKeyValue = val;
-                            updateFilter();
-                        })
-                        .build();
-                this.addRenderableWidget(keyValCheckbox);
-                btnY += btnHeight + spacing;
-            }
-        }
+        // 4. Left Scrollable Navigator Category List
+        this.categoryList = new CategoryNavigationList(
+                this.minecraft,
+                navWidth - 4,
+                navHeight - 24,
+                navY + 19,
+                21,
+                this
+        );
+        this.categoryList.setX(navX + 2);
+        this.addRenderableWidget(this.categoryList);
 
         // 5. Initialize Result List
         this.resultList = new SearchResultList(
@@ -321,12 +304,46 @@ public class GlobalSearchScreen extends Screen {
     }
 
     private void triggerRescan() {
-        if (this.minecraft != null) {
-            int count = SearchIndexer.rescan(this.minecraft);
-            this.allIndexedResults = SearchIndexer.getOrIndex(this.minecraft);
+        if (this.minecraft != null && !this.isIndexing) {
+            this.isIndexing = true;
+            this.copiedNotification = "⚡ Rescanning in background...";
+            this.notificationExpiry = System.currentTimeMillis() + 10000;
+            SearchIndexer.rescanAsync(this.minecraft, results -> {
+                this.allIndexedResults = results;
+                this.isIndexing = false;
+                this.copiedNotification = "Rescanned & indexed " + results.size() + " entries";
+                this.notificationExpiry = System.currentTimeMillis() + 3000;
+                if (this.categoryList != null) {
+                    this.categoryList.rebuildEntries();
+                }
+                updateFilter();
+            });
+        }
+    }
+
+    public SearchResultType getCurrentFilter() {
+        return this.currentFilter;
+    }
+
+    public boolean isSearchByKeyValue() {
+        return this.searchByKeyValue;
+    }
+
+    public void toggleSearchByKeyValue() {
+        this.searchByKeyValue = !this.searchByKeyValue;
+        if (this.categoryList != null) {
+            this.categoryList.rebuildEntries();
+        }
+        updateFilter();
+    }
+
+    public void onCategorySelected(SearchResultType type) {
+        if (this.currentFilter != type) {
+            this.currentFilter = type;
+            if (this.categoryList != null) {
+                this.categoryList.rebuildEntries();
+            }
             updateFilter();
-            this.copiedNotification = "Rescanned & indexed " + count + " entries";
-            this.notificationExpiry = System.currentTimeMillis() + 3000;
         }
     }
 
@@ -390,7 +407,7 @@ public class GlobalSearchScreen extends Screen {
         return super.keyPressed(event);
     }
 
-    private int getCategoryResultCount(SearchResultType type) {
+    public int getCategoryResultCount(SearchResultType type) {
         if (type == null || type.equals(SearchResultType.ALL)) {
             return allIndexedResults.size();
         }
@@ -449,6 +466,9 @@ public class GlobalSearchScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (this.categoryList != null && this.categoryList.mouseDragged(event, dx, dy)) {
+            return true;
+        }
         if (this.resultList != null && this.resultList.mouseDragged(event, dx, dy)) {
             return true;
         }
@@ -457,6 +477,9 @@ public class GlobalSearchScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (this.categoryList != null && this.categoryList.mouseReleased(event)) {
+            return true;
+        }
         if (this.resultList != null && this.resultList.mouseReleased(event)) {
             return true;
         }
@@ -535,6 +558,9 @@ public class GlobalSearchScreen extends Screen {
             GuiRenderUtils.drawRoundedBox(graphics, pillX, pillY, pillW, pillH, pillBg, pillBorder);
 
             graphics.centeredText(this.font, listeningComp, this.width / 2, textY, pulseColor);
+        } else if (isIndexing) {
+            Component indexingComp = Component.literal("⚡ Indexing entries in background...").withStyle(style -> style.withColor(theme.getAccentColor()).withItalic(true));
+            graphics.centeredText(this.font, indexingComp, this.width / 2, textY, theme.getAccentColor());
         } else if (copiedNotification != null && System.currentTimeMillis() < notificationExpiry) {
             String notification = copiedNotification.startsWith("Rebound") || copiedNotification.startsWith("Updated") || copiedNotification.startsWith("Rescanned") || copiedNotification.startsWith("Keybind")
                     ? "✓ " + copiedNotification

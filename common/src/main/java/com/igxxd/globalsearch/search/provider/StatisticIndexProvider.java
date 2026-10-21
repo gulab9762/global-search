@@ -27,7 +27,29 @@ public class StatisticIndexProvider implements SearchIndexProvider {
     @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
         if (minecraft == null || minecraft.player == null) return;
-        StatsCounter stats = minecraft.player.getStats();
+
+        // Request live stats from server (updates client cache over network if on multiplayer)
+        if (minecraft.getConnection() != null) {
+            try {
+                minecraft.getConnection().send(new net.minecraft.network.protocol.game.ServerboundClientCommandPacket(
+                        net.minecraft.network.protocol.game.ServerboundClientCommandPacket.Action.REQUEST_STATS
+                ));
+            } catch (Throwable ignored) {}
+        }
+
+        // Live stats in Singleplayer directly from ServerPlayer
+        StatsCounter stats = null;
+        if (minecraft.getSingleplayerServer() != null) {
+            try {
+                var sPlayer = minecraft.getSingleplayerServer().getPlayerList().getPlayer(minecraft.player.getUUID());
+                if (sPlayer != null) {
+                    stats = sPlayer.getStats();
+                }
+            } catch (Throwable ignored) {}
+        }
+        if (stats == null) {
+            stats = minecraft.player.getStats();
+        }
         if (stats == null) return;
 
         // 1. Custom Player Statistics
