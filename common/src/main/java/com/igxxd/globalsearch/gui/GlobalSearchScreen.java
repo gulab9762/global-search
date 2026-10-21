@@ -64,9 +64,10 @@ public class GlobalSearchScreen extends Screen {
         int sideMargin = 12;
         int topMargin = 20;
 
-        // 1. Top Search Bar & Rescan Button (Theme 2: Ancient Debris & Netherite)
-        int rescanBtnWidth = 68;
-        int searchTotalWidth = this.width - (sideMargin * 2) - rescanBtnWidth - 6;
+        // 1. Top Search Bar, Theme Toggle & Rescan Button
+        int themeBtnWidth = 104;
+        int rescanBtnWidth = 64;
+        int searchTotalWidth = this.width - (sideMargin * 2) - rescanBtnWidth - themeBtnWidth - 10;
 
         this.searchBoxX = sideMargin;
         this.searchBoxY = topMargin;
@@ -83,7 +84,7 @@ public class GlobalSearchScreen extends Screen {
                 Component.literal("Search")
         );
         this.searchBox.setBordered(false);
-        this.searchBox.setTextColor(0xFFFFF8F0);
+        this.searchBox.setTextColor(SearchTheme.getCurrent().getTitleColor());
         this.searchBox.setHint(Component.literal("Search keybinds, settings, items, biomes, mods...").withStyle(ChatFormatting.DARK_GRAY));
         if (!savedSearchQuery.isEmpty()) {
             this.searchBox.setValue(savedSearchQuery);
@@ -95,8 +96,21 @@ public class GlobalSearchScreen extends Screen {
         this.addRenderableWidget(this.searchBox);
         this.setInitialFocus(this.searchBox);
 
-        ThemedButton rescanBtn = new ThemedButton(
+        ThemedButton themeBtn = new ThemedButton(
                 sideMargin + searchBoxW + 6,
+                topMargin,
+                themeBtnWidth,
+                20,
+                Component.literal(SearchTheme.getCurrent().getIcon() + " " + SearchTheme.getCurrent().getDisplayName()),
+                () -> {
+                    SearchTheme.setCurrent(SearchTheme.getCurrent().next());
+                    this.rebuildWidgets();
+                }
+        ).setCentered(true).setHasDot(false);
+        this.addRenderableWidget(themeBtn);
+
+        ThemedButton rescanBtn = new ThemedButton(
+                sideMargin + searchBoxW + 6 + themeBtnWidth + 4,
                 topMargin,
                 rescanBtnWidth,
                 20,
@@ -118,7 +132,7 @@ public class GlobalSearchScreen extends Screen {
         int listWidth = this.width - listX - sideMargin;
         int listHeight = navHeight;
 
-        // 4. Left Navigator Buttons (Theme 2: Deep Netherite Category Buttons with Counts)
+        // 4. Left Navigator Buttons with Category Icons and Live Counts
         List<SearchResultType> filterTypes = SearchResultType.getAllCategories();
 
         int btnWidth = navWidth - 8;
@@ -142,7 +156,7 @@ public class GlobalSearchScreen extends Screen {
                         this.currentFilter = type;
                         this.rebuildWidgets();
                     }
-            ).setActiveThemeHighlight(active).setBadgeCount(count);
+            ).setActiveThemeHighlight(active).setIconPrefix(type.getCategoryIcon()).setBadgeCount(count);
             this.addRenderableWidget(btn);
             btnY += btnHeight + spacing;
 
@@ -347,6 +361,14 @@ public class GlobalSearchScreen extends Screen {
             return true;
         }
 
+        if (event.key() == InputConstants.KEY_F6 || (event.hasControlDown() && event.key() == InputConstants.KEY_T)) {
+            SearchTheme.setCurrent(SearchTheme.getCurrent().next());
+            this.rebuildWidgets();
+            this.copiedNotification = "Switched to " + SearchTheme.getCurrent().getIcon() + " " + SearchTheme.getCurrent().getDisplayName();
+            this.notificationExpiry = System.currentTimeMillis() + 2500;
+            return true;
+        }
+
         if (event.key() == InputConstants.KEY_RETURN) {
             if (resultList != null && resultList.getSelected() != null) {
                 SearchResult sel = resultList.getSelected().getResult();
@@ -437,40 +459,32 @@ public class GlobalSearchScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        // Theme 2: Deep Netherite & Ancient Debris Atmosphere
+        SearchTheme theme = SearchTheme.getCurrent();
+
+        // Screen atmosphere
         this.extractTransparentBackground(graphics);
-        graphics.fill(0, 0, this.width, this.height, 0xBB141215);
-        graphics.fillGradient(0, 0, this.width, 36, 0x552B1F24, 0x00000000);
+        graphics.fill(0, 0, this.width, this.height, theme.getScreenBg());
+        graphics.fillGradient(0, 0, this.width, 36, theme.getActiveBtnGradTop() & 0x66FFFFFF, 0x00000000);
 
         // Header Title: ✦ GLOBAL SEARCH ✦
-        graphics.centeredText(this.font, Component.literal("✦ GLOBAL SEARCH ✦").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), this.width / 2, 7, 0xFFFFAA00);
+        graphics.centeredText(this.font, Component.literal("✦ GLOBAL SEARCH ✦").withStyle(ChatFormatting.BOLD), this.width / 2, 7, theme.getHeaderColor());
 
-        // Search Bar Outer Frame (Ancient Debris Metallic Border & Netherite Slate Fill)
+        // Search Bar Outer Frame with rounded box
         boolean searchFocused = this.searchBox != null && this.searchBox.isFocused();
-        int borderColor = searchFocused ? 0xFFD97706 : 0xFF5A3D31;
-        int shadowColor = 0xFF2A1C16;
-
-        graphics.fill(searchBoxX, searchBoxY, searchBoxX + searchBoxW, searchBoxY + searchBoxH, 0xEE1A1619);
-        graphics.fill(searchBoxX, searchBoxY, searchBoxX + searchBoxW, searchBoxY + 1, borderColor);
-        graphics.fill(searchBoxX, searchBoxY + searchBoxH - 1, searchBoxX + searchBoxW, searchBoxY + searchBoxH, shadowColor);
-        graphics.fill(searchBoxX, searchBoxY, searchBoxX + 1, searchBoxY + searchBoxH, borderColor);
-        graphics.fill(searchBoxX + searchBoxW - 1, searchBoxY, searchBoxX + searchBoxW, searchBoxY + searchBoxH, shadowColor);
-        graphics.fill(searchBoxX + 1, searchBoxY + 1, searchBoxX + searchBoxW - 1, searchBoxY + 2, 0x33000000);
+        int borderColor = searchFocused ? theme.getSearchBorderFocus() : theme.getSearchBorder();
+        GuiRenderUtils.drawRoundedCard(graphics, searchBoxX, searchBoxY, searchBoxW, searchBoxH, theme.getSearchBg(), borderColor, 0x22FFFFFF);
 
         // Search icon 🔍
-        graphics.text(this.font, "🔍", searchBoxX + 5, searchBoxY + 6, searchFocused ? 0xFFD97706 : 0xFF8C5738);
+        graphics.text(this.font, "🔍", searchBoxX + 5, searchBoxY + 6, searchFocused ? theme.getSearchBorderFocus() : theme.getMutedTextColor());
 
-        // Left Navigation Card Background & Border (Deep Netherite Slate)
-        graphics.fill(navX, navY, navX + navWidth, navY + navHeight, 0xEE181518);
-        graphics.fill(navX, navY, navX + navWidth, navY + 1, 0xFF4D362C);
-        graphics.fill(navX, navY + navHeight - 1, navX + navWidth, navY + navHeight, 0xFF261B16);
-        graphics.fill(navX, navY, navX + 1, navY + navHeight, 0xFF3D2C25);
-        graphics.fill(navX + navWidth - 1, navY, navX + navWidth, navY + navHeight, 0xFF3D2C25);
+        // Left Navigation Card Background & Border (Rounded Panel)
+        GuiRenderUtils.drawRoundedCard(graphics, navX, navY, navWidth, navHeight, theme.getPanelBg(), theme.getPanelBorder(), 0x11FFFFFF);
+        graphics.fill(navX + 1, navY, navX + navWidth - 1, navY + 1, theme.getPanelBorderTop());
 
         // Navigator Header Label
-        graphics.text(this.font, Component.literal("⚔ CATEGORIES").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), navX + 8, navY + 6, 0xFFD97706);
+        graphics.text(this.font, Component.literal("⚔ CATEGORIES").withStyle(ChatFormatting.BOLD), navX + 8, navY + 6, theme.getAccentColor());
 
-        // Render widgets (search box, rescan button, filter buttons, checkbox, result list)
+        // Render widgets (search box, theme button, rescan button, filter buttons, checkbox, result list)
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         // Clear cross icon on right-hand side inside search input box
@@ -483,14 +497,14 @@ public class GlobalSearchScreen extends Screen {
             if (isClearHovered) {
                 graphics.fill(clearBtnX, clearBtnY, clearBtnX + clearBtnSize, clearBtnY + clearBtnSize, 0x44D97706);
             }
-            graphics.centeredText(this.font, "✕", clearBtnX + (clearBtnSize / 2), clearBtnY + (clearBtnSize - 8) / 2, isClearHovered ? 0xFFFFF0D0 : 0xFF8C5738);
+            graphics.centeredText(this.font, "✕", clearBtnX + (clearBtnSize / 2), clearBtnY + (clearBtnSize - 8) / 2, isClearHovered ? 0xFFFFF0D0 : theme.getMutedTextColor());
         }
 
-        // Footer Bar (Theme 2: Netherite Slate with Ancient Debris Border)
+        // Footer Bar (Theme Slate with Accent Border)
         int footerH = 18;
         int footerY = this.height - footerH;
-        graphics.fill(0, footerY, this.width, this.height, 0xEE121013);
-        graphics.fill(0, footerY, this.width, footerY + 1, 0xFF3D2C25);
+        graphics.fill(0, footerY, this.width, this.height, theme.getPanelBg());
+        graphics.fill(0, footerY, this.width, footerY + 1, theme.getPanelBorder());
 
         int textY = footerY + (footerH - 8) / 2;
         if (listeningKeybindResult != null) {
@@ -506,12 +520,14 @@ public class GlobalSearchScreen extends Screen {
             graphics.centeredText(this.font, Component.literal(notification).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), this.width / 2, textY, 0xFF4ADE80);
         } else {
             String stats = "Showing " + filteredResults.size() + " of " + allIndexedResults.size() + " results";
-            graphics.text(this.font, stats, 14, textY, 0xFFA89F91);
+            graphics.text(this.font, stats, 14, textY, theme.getMutedTextColor());
 
-            Component hints = Component.literal("[Enter] ").withStyle(ChatFormatting.GOLD)
-                    .append(Component.literal("Select / Edit   ").withStyle(ChatFormatting.GRAY))
+            Component hints = Component.literal("[F6] ").withStyle(ChatFormatting.GOLD)
+                    .append(Component.literal("Theme   ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal("[Enter] ").withStyle(ChatFormatting.GOLD))
+                    .append(Component.literal("Select/Edit   ").withStyle(ChatFormatting.GRAY))
                     .append(Component.literal("[↑ ↓] ").withStyle(ChatFormatting.GOLD))
-                    .append(Component.literal("Navigate   ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal("Nav   ").withStyle(ChatFormatting.GRAY))
                     .append(Component.literal("[Esc] ").withStyle(ChatFormatting.GOLD))
                     .append(Component.literal("Close").withStyle(ChatFormatting.GRAY));
             int hintsW = this.font.width(hints);

@@ -95,6 +95,21 @@ public class SearchResultType {
         return valueColor;
     }
 
+    public String getCategoryIcon() {
+        return switch (this.id) {
+            case "all" -> "✦";
+            case "keybind" -> "⌨";
+            case "setting" -> "⚙";
+            case "item" -> "📦";
+            case "enchantment" -> "✨";
+            case "potion" -> "🧪";
+            case "biome" -> "🌲";
+            case "dimension" -> "🌌";
+            case "mod" -> "🧩";
+            default -> "•";
+        };
+    }
+
     public ItemStack getDefaultIcon() {
         try {
             ItemStack stack = defaultIconSupplier.get();

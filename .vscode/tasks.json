@@ -187,6 +187,20 @@
             },
             "group": "build",
             "problemMatcher": []
+        },
+        {
+            "label": "Minecraft: Test UI & Capture Screenshot",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "scripts/test_ui_screenshot.py",
+                "--all-themes"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": []
         }
     ]
 }

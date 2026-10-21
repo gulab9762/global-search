@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Theme 2 (Deep Netherite & Ancient Debris RPG UI) successfully implemented, verified, and built on branch feature/theme-2-netherite-rpg!"
+    "Global Search: Multi-theme engine (Netherite RPG, Obsidian Glass, Raycast Clean, Ender Twilight) with rounded corners, category icons, live F6 toggle, and automated UI test script successfully implemented and verified!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }

@@ -10,8 +10,8 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 /**
- * Custom styled button component implementing Theme 2: Deep Netherite and Ancient Debris (RPG Aesthetic).
- * Supports active ember glows, metallic bronze borders, glowing dot indicators, and centered mode.
+ * Custom styled rounded button component dynamically supporting multiple themes.
+ * Supports active glows, metallic and neon borders, rounded corners, icons, and centered mode.
  */
 public class ThemedButton extends AbstractWidget {
 
@@ -19,6 +19,7 @@ public class ThemedButton extends AbstractWidget {
     private boolean activeThemeHighlight = false;
     private boolean hasDot = true;
     private boolean centered = false;
+    private String iconPrefix = null;
     private int badgeCount = -1;
 
     public ThemedButton(int x, int y, int width, int height, Component message, Runnable onPress) {
@@ -38,6 +39,11 @@ public class ThemedButton extends AbstractWidget {
 
     public ThemedButton setCentered(boolean centered) {
         this.centered = centered;
+        return this;
+    }
+
+    public ThemedButton setIconPrefix(String iconPrefix) {
+        this.iconPrefix = iconPrefix;
         return this;
     }
 
@@ -76,66 +82,58 @@ public class ThemedButton extends AbstractWidget {
         int h = this.getHeight();
         Font font = Minecraft.getInstance().font;
         boolean hovered = this.isHovered();
+        SearchTheme theme = SearchTheme.getCurrent();
 
-        // Theme 2: Deep Netherite & Ancient Debris Button Styling
         if (activeThemeHighlight) {
-            // Active Category / Pressed Button State: Rich Ancient Debris Ember Gradient
-            graphics.fillGradient(x, y, x + w, y + h, 0xFF442A22, 0xFF2D1C17);
-            // Outer Border: Rich Bronze / Amber
-            graphics.fill(x, y, x + w, y + 1, 0xFFB45309);
-            graphics.fill(x, y + h - 1, x + w, y + h, 0xFF78350F);
-            graphics.fill(x, y, x + 1, y + h, 0xFFB45309);
-            graphics.fill(x + w - 1, y, x + w, y + h, 0xFF78350F);
-            // 1px inner specular top highlight
-            graphics.fill(x + 1, y + 1, x + w - 1, y + 2, 0x33FFFFFF);
+            // Active / Selected state with rounded corners & top gradient
+            GuiRenderUtils.drawRoundedCard(graphics, x, y, w, h, theme.getActiveBtnGradTop(), theme.getActiveBtnBorder(), 0x33FFFFFF);
 
             if (centered) {
-                graphics.centeredText(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, 0xFFFBBF24);
+                graphics.centeredText(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, theme.getActiveBtnText());
             } else {
-                if (hasDot) {
-                    graphics.text(font, "●", x + 5, y + (h - 8) / 2, 0xFFFBBF24);
-                    graphics.text(font, this.getMessage(), x + 16, y + (h - 8) / 2, 0xFFFBBF24);
-                } else {
-                    graphics.text(font, this.getMessage(), x + 6, y + (h - 8) / 2, 0xFFFBBF24);
+                int textStartX = x + 6;
+                if (iconPrefix != null && !iconPrefix.isEmpty()) {
+                    graphics.text(font, iconPrefix, textStartX, y + (h - 8) / 2, theme.getActiveBtnText());
+                    textStartX += font.width(iconPrefix) + 4;
+                } else if (hasDot) {
+                    graphics.text(font, "●", textStartX, y + (h - 8) / 2, theme.getActiveBtnText());
+                    textStartX += 10;
                 }
+                graphics.text(font, this.getMessage(), textStartX, y + (h - 8) / 2, theme.getActiveBtnText());
             }
         } else if (hovered) {
-            // Hovered State: Netherite Slate with Ancient Debris Bronze Highlight
-            graphics.fill(x, y, x + w, y + h, 0xFF362620);
-            graphics.fill(x, y, x + w, y + 1, 0xFF8C5738);
-            graphics.fill(x, y + h - 1, x + w, y + h, 0xFF4D362C);
-            graphics.fill(x, y, x + 1, y + h, 0xFF8C5738);
-            graphics.fill(x + w - 1, y, x + w, y + h, 0xFF4D362C);
-            // 1px inner highlight
-            graphics.fill(x + 1, y + 1, x + w - 1, y + 2, 0x22FFFFFF);
+            // Hovered state
+            GuiRenderUtils.drawRoundedCard(graphics, x, y, w, h, theme.getCardHoverBg(), theme.getCardBorderHover(), 0x22FFFFFF);
 
             if (centered) {
-                graphics.centeredText(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, 0xFFFFF0D0);
+                graphics.centeredText(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, 0xFFFFFFFF);
             } else {
-                if (hasDot) {
-                    graphics.text(font, "○", x + 5, y + (h - 8) / 2, 0xFF8C5738);
-                    graphics.text(font, this.getMessage(), x + 16, y + (h - 8) / 2, 0xFFFFF0D0);
-                } else {
-                    graphics.text(font, this.getMessage(), x + 6, y + (h - 8) / 2, 0xFFFFF0D0);
+                int textStartX = x + 6;
+                if (iconPrefix != null && !iconPrefix.isEmpty()) {
+                    graphics.text(font, iconPrefix, textStartX, y + (h - 8) / 2, theme.getAccentColor());
+                    textStartX += font.width(iconPrefix) + 4;
+                } else if (hasDot) {
+                    graphics.text(font, "○", textStartX, y + (h - 8) / 2, theme.getCardBorderHover());
+                    textStartX += 10;
                 }
+                graphics.text(font, this.getMessage(), textStartX, y + (h - 8) / 2, 0xFFFFF0D0);
             }
         } else {
-            // Normal Inactive State: Deep Charcoal with Subtle Border
-            graphics.fill(x, y, x + w, y + h, 0xCC1E191D);
-            graphics.fill(x, y, x + w, y + 1, 0xFF3D2C25);
-            graphics.fill(x, y + h - 1, x + w, y + h, 0xFF261B16);
-            graphics.fill(x, y, x + 1, y + h, 0xFF3D2C25);
-            graphics.fill(x + w - 1, y, x + w, y + h, 0xFF261B16);
+            // Normal inactive state
+            GuiRenderUtils.drawRoundedBox(graphics, x, y, w, h, theme.getCardBg(), theme.getPanelBorder());
 
             if (centered) {
-                graphics.centeredText(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, 0xFFA89F91);
+                graphics.centeredText(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, theme.getMutedTextColor());
             } else {
-                if (hasDot) {
-                    graphics.text(font, "○", x + 5, y + (h - 8) / 2, 0xFF5A3D31);
-                    graphics.text(font, this.getMessage(), x + 16, y + (h - 8) / 2, 0xFFA89F91);
-                } else {
-                    graphics.text(font, this.getMessage(), x + 6, y + (h - 8) / 2, 0xFFA89F91);
+                int textStartX = x + 6;
+                if (iconPrefix != null && !iconPrefix.isEmpty()) {
+                    graphics.text(font, iconPrefix, textStartX, y + (h - 8) / 2, theme.getMutedTextColor());
+                    textStartX += font.width(iconPrefix) + 4;
+                } else if (hasDot) {
+                    graphics.text(font, "○", textStartX, y + (h - 8) / 2, theme.getCardBorder());
+                    textStartX += 10;
                 }
+                graphics.text(font, this.getMessage(), textStartX, y + (h - 8) / 2, theme.getMutedTextColor());
             }
         }
 
@@ -143,9 +141,9 @@ public class ThemedButton extends AbstractWidget {
         if (badgeCount >= 0) {
             String countStr = String.valueOf(badgeCount);
             int countW = font.width(countStr);
-            int badgeX = x + w - countW - 7;
+            int badgeX = x + w - countW - 6;
             int badgeY = y + (h - 8) / 2;
-            int color = activeThemeHighlight ? 0xFFFBBF24 : (hovered ? 0xFFD97706 : 0xFF6B584E);
+            int color = activeThemeHighlight ? theme.getActiveBtnText() : (hovered ? theme.getAccentColor() : theme.getMutedTextColor());
             graphics.text(font, countStr, badgeX, badgeY, color);
         }
     }
