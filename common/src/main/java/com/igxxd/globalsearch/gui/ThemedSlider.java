@@ -167,12 +167,12 @@ public class ThemedSlider extends AbstractWidget {
         int gripColor = thumbHovered ? theme.getAccentColor() : theme.getMutedTextColor();
         graphics.fill(thumbX + thumbW / 2, y + 4, thumbX + thumbW / 2 + 1, y + thumbH - 4, gripColor);
 
-        // 4. Min / Max indicators below track
+        // 4. Min / Max indicators above track (prevents overlapping with step buttons below)
         String minStr = isInteger ? String.valueOf((long) min) : String.format(Locale.ROOT, "%.1f", min);
         String maxStr = isInteger ? String.valueOf((long) max) : String.format(Locale.ROOT, "%.1f", max);
-        graphics.text(font, minStr, trackX - 2, y + h + 2, theme.getMutedTextColor());
+        graphics.text(font, minStr, trackX - 2, y - 9, theme.getMutedTextColor());
         int maxW = font.width(maxStr);
-        graphics.text(font, maxStr, trackX + trackW + 2 - maxW, y + h + 2, theme.getMutedTextColor());
+        graphics.text(font, maxStr, trackX + trackW + 2 - maxW, y - 9, theme.getMutedTextColor());
     }
 
     @Override

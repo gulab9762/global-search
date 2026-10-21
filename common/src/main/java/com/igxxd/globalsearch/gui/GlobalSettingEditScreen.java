@@ -27,20 +27,18 @@ import java.util.function.Consumer;
 public class GlobalSettingEditScreen extends Screen {
 
     public enum SettingType {
-        BOOLEAN("Boolean Switch", "◩", 0xFF10B981),
-        INTEGER("Integer Number", "🔢", 0xFF3B82F6),
-        DOUBLE("Decimal / Float", "📐", 0xFF8B5CF6),
-        CHOICE("Option Choice", "📋", 0xFFF59E0B),
-        STRING("Text Value", "🔤", 0xFF94A3B8);
+        BOOLEAN("Boolean Switch", "◩"),
+        INTEGER("Integer Number", "🔢"),
+        DOUBLE("Decimal / Float", "📐"),
+        CHOICE("Option Choice", "📋"),
+        STRING("Text Value", "🔤");
 
         private final String displayName;
         private final String icon;
-        private final int accentColor;
 
-        SettingType(String displayName, String icon, int accentColor) {
+        SettingType(String displayName, String icon) {
             this.displayName = displayName;
             this.icon = icon;
-            this.accentColor = accentColor;
         }
 
         public String getDisplayName() {
@@ -49,10 +47,6 @@ public class GlobalSettingEditScreen extends Screen {
 
         public String getIcon() {
             return icon;
-        }
-
-        public int getAccentColor() {
-            return accentColor;
         }
     }
 
@@ -184,15 +178,20 @@ public class GlobalSettingEditScreen extends Screen {
             boolean isInt = (this.settingType == SettingType.INTEGER);
             double initialNum = 0.0;
             try {
-                initialNum = Double.parseDouble(initialVal);
+                String cleanNum = initialVal.replaceAll("[^0-9.-]", "");
+                if (!cleanNum.isEmpty() && !cleanNum.equals("-")) {
+                    initialNum = Double.parseDouble(cleanNum);
+                }
             } catch (Exception ignored) {}
+
+            String formattedInitial = isInt ? String.valueOf((long) initialNum) : String.format(Locale.ROOT, "%.2f", initialNum);
 
             double[] range = calculateRange(result.getTitle(), result.getPath(), initialNum, isInt);
             double min = range[0];
             double max = range[1];
             double step = range[2];
 
-            int inputW = 74;
+            int inputW = 82;
             int spacing = 10;
             int sliderW = cardW - 48 - inputW - spacing;
             int rowH = 22;
@@ -218,26 +217,30 @@ public class GlobalSettingEditScreen extends Screen {
             );
             this.addRenderableWidget(this.numericSlider);
 
-            // Direct Number Input EditBox alongside the slider
-            this.valueInput = new EditBox(this.font, inputX + 4, contentY + 2, inputW - 8, rowH - 4, Component.literal("Value"));
+            // Direct Number Input EditBox alongside the slider, vertically centered
+            int textOffsetY = (rowH - 9) / 2; // (22 - 9) / 2 = 6
+            this.valueInput = new EditBox(this.font, inputX + 6, contentY + textOffsetY, inputW - 12, 12, Component.literal("Value"));
             this.valueInput.setBordered(false);
             this.valueInput.setTextColor(theme.getTitleColor());
-            this.valueInput.setValue(initialVal);
+            this.valueInput.setValue(formattedInitial);
             this.valueInput.setResponder(text -> {
                 if (updatingFromSlider || numericSlider == null) return;
                 try {
-                    double typedVal = Double.parseDouble(text.trim());
-                    numericSlider.ensureRange(typedVal);
-                    numericSlider.setValue(typedVal, false);
+                    String clean = text.replaceAll("[^0-9.-]", "");
+                    if (!clean.isEmpty() && !clean.equals("-")) {
+                        double typedVal = Double.parseDouble(clean);
+                        numericSlider.ensureRange(typedVal);
+                        numericSlider.setValue(typedVal, false);
+                    }
                 } catch (Exception ignored) {}
             });
             this.addRenderableWidget(this.valueInput);
             this.setInitialFocus(this.valueInput);
 
-            // Step adjustment buttons underneath the slider & input
-            int btnW = isInt ? 40 : 46;
-            int btnH = 18;
-            int stepY = contentY + 30;
+            // Step adjustment buttons underneath the slider & input with proper breathing room
+            int btnW = isInt ? 42 : 48;
+            int btnH = 20;
+            int stepY = contentY + 34;
             int startX = cardX + (cardW - (btnW * 4 + 18)) / 2;
 
             if (isInt) {
@@ -402,7 +405,8 @@ public class GlobalSettingEditScreen extends Screen {
     private void adjustInteger(int delta) {
         if (valueInput == null) return;
         try {
-            long current = Long.parseLong(valueInput.getValue().trim());
+            String clean = valueInput.getValue().replaceAll("[^0-9-]", "");
+            long current = clean.isEmpty() ? 0 : Long.parseLong(clean);
             long next = current + delta;
             valueInput.setValue(String.valueOf(next));
             if (numericSlider != null) {
@@ -421,7 +425,8 @@ public class GlobalSettingEditScreen extends Screen {
     private void adjustDouble(double delta) {
         if (valueInput == null) return;
         try {
-            double current = Double.parseDouble(valueInput.getValue().trim());
+            String clean = valueInput.getValue().replaceAll("[^0-9.-]", "");
+            double current = clean.isEmpty() ? 0.0 : Double.parseDouble(clean);
             double next = current + delta;
             double rounded = Math.round(next * 1000.0) / 1000.0;
             valueInput.setValue(String.valueOf(rounded));
@@ -536,15 +541,16 @@ public class GlobalSettingEditScreen extends Screen {
         String headerTitle = "⚙️  Setting Editor  [" + result.getModName() + "]";
         graphics.text(font, headerTitle, cardX + 12, cardY + 9, theme.getHeaderColor());
 
-        // 4. Type Identification Pill Badge (Top Right)
+        // 4. Type Identification Pill Badge (Top Right) - follows active theme
         String typeLabel = settingType.getIcon() + "  " + settingType.getDisplayName();
         int badgeW = font.width(typeLabel) + 12;
         int badgeH = 14;
         int badgeX = cardX + cardW - badgeW - 12;
         int badgeY = cardY + 6;
-        int badgeBg = (settingType.getAccentColor() & 0x00FFFFFF) | 0x2A000000;
-        GuiRenderUtils.drawRoundedBox(graphics, badgeX, badgeY, badgeW, badgeH, badgeBg, settingType.getAccentColor());
-        graphics.text(font, typeLabel, badgeX + 6, badgeY + 3, settingType.getAccentColor());
+        int badgeColor = theme.getAccentColor();
+        int badgeBg = (badgeColor & 0x00FFFFFF) | 0x24000000;
+        GuiRenderUtils.drawRoundedBox(graphics, badgeX, badgeY, badgeW, badgeH, badgeBg, badgeColor);
+        graphics.text(font, typeLabel, badgeX + 6, badgeY + 3, badgeColor);
 
         // 5. Setting Title & Path
         String displayTitle = font.plainSubstrByWidth(result.getTitle(), cardW - 24);
@@ -564,7 +570,7 @@ public class GlobalSettingEditScreen extends Screen {
 
         } else if (settingType == SettingType.INTEGER || settingType == SettingType.DOUBLE) {
             // Rounded background box behind number input box
-            int inputW = 74;
+            int inputW = 82;
             int inputX = cardX + cardW - 24 - inputW;
             int rowH = 22;
             GuiRenderUtils.drawRoundedBox(graphics, inputX, contentY, inputW, rowH, theme.getSearchBg(), theme.getSearchBorderFocus());
