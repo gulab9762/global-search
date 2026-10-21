@@ -299,22 +299,10 @@ public class XaeroConfigIndexProvider implements SearchIndexProvider {
         String currentVal = result.getValue() != null ? result.getValue().trim() : "";
         String clsName = entry.optionObj.getClass().getSimpleName();
 
-        // 1. Instant toggle for Boolean options
-        if (clsName.contains("Boolean") || currentVal.equalsIgnoreCase("true") || currentVal.equalsIgnoreCase("false")) {
-            boolean curB = Boolean.parseBoolean(currentVal);
-            boolean newB = !curB;
-            if (setXaeroOptionValue(entry.channel, entry.optionObj, newB)) {
-                result.setValue(String.valueOf(newB));
-                if (onValueChanged != null) {
-                    onValueChanged.accept(String.valueOf(newB));
-                }
-                return true;
-            }
-        }
-
-        // 2. Open GlobalSettingEditScreen for numbers, choices, and strings
         GlobalSettingEditScreen.SettingType type = null;
-        if (clsName.contains("Range")) {
+        if (clsName.contains("Boolean") || currentVal.equalsIgnoreCase("true") || currentVal.equalsIgnoreCase("false")) {
+            type = GlobalSettingEditScreen.SettingType.BOOLEAN;
+        } else if (clsName.contains("Range")) {
             type = GlobalSettingEditScreen.SettingType.INTEGER;
         } else if (clsName.contains("Stepped")) {
             type = GlobalSettingEditScreen.SettingType.DOUBLE;

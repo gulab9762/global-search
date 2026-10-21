@@ -1,6 +1,7 @@
 package com.igxxd.globalsearch.search.provider;
 
 import com.igxxd.globalsearch.Constants;
+import com.igxxd.globalsearch.gui.GlobalSettingEditScreen;
 import com.igxxd.globalsearch.search.SearchResult;
 import com.igxxd.globalsearch.search.SearchResultType;
 import net.minecraft.client.Minecraft;
@@ -21,16 +22,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
 
     @FunctionalInterface
     public interface SettingEditor {
-        String edit(Minecraft minecraft, Options options, Screen screen, Consumer<String> onValueChanged) throws Exception;
-    }
-
-    @FunctionalInterface
-    public interface SimpleSettingEditor {
-        String edit(Minecraft minecraft, Options options) throws Exception;
-    }
-
-    private void addSetting(List<SearchResult> results, Set<String> seenKeys, String title, String path, String value, String transKey, SimpleSettingEditor editor) {
-        addSetting(results, seenKeys, title, path, value, transKey, editor != null ? (mc, opts, scr, cb) -> editor.edit(mc, opts) : null);
+        String edit(Minecraft minecraft, Options options, SearchResult result, Screen screen, Consumer<String> onValueChanged) throws Exception;
     }
 
     private final Map<String, SettingEditor> settingEditors = new HashMap<>();
@@ -40,6 +32,14 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         return "Vanilla Settings";
     }
 
+    private void openModal(Minecraft mc, Screen scr, SearchResult result,
+                           GlobalSettingEditScreen.SettingType type,
+                           List<String> choices, String defaultVal,
+                           GlobalSettingEditScreen.SettingSaveAction saveAction,
+                           Consumer<String> cb) {
+        mc.gui.setScreen(new GlobalSettingEditScreen(scr, result, type, choices, defaultVal, saveAction, cb));
+    }
+
     @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
         Options options = minecraft.options;
@@ -47,153 +47,170 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
 
         settingEditors.clear();
 
-        // Core known options with exact end-to-end paths and option keys
+        // 1. Core known options with dedicated modal popup dialogs
         addSetting(results, seenKeys, "Field of View (FOV)", "Options > Video Settings", String.valueOf(options.fov().get()), "options.fov",
-                (mc, opts) -> {
-                    int cur = opts.fov().get();
-                    int next = (cur >= 110) ? 70 : cur + 10;
-                    opts.fov().set(next);
-                    opts.save();
-                    return String.valueOf(next);
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "70", newVal -> {
+                        int n = Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
+                        opts.fov().set(n);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Brightness", "Options > Video Settings", String.format(Locale.ROOT, "%.0f%%", options.gamma().get() * 100), "options.gamma",
-                (mc, opts) -> {
-                    double cur = opts.gamma().get();
-                    double next = (cur >= 1.0) ? 0.0 : Math.min(1.0, cur + 0.25);
-                    opts.gamma().set(next);
-                    opts.save();
-                    return String.format(Locale.ROOT, "%.0f%%", next * 100);
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.DOUBLE, null, "0.5", newVal -> {
+                        double d = Double.parseDouble(newVal.replaceAll("[^0-9.]", ""));
+                        if (d > 1.0) d /= 100.0;
+                        opts.gamma().set(d);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Render Distance", "Options > Video Settings", options.getEffectiveRenderDistance() + " chunks", "options.renderDistance",
-                (mc, opts) -> {
-                    int cur = opts.renderDistance().get();
-                    int next = (cur >= 32) ? 8 : cur + 4;
-                    opts.renderDistance().set(next);
-                    opts.save();
-                    return next + " chunks";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "12", newVal -> {
+                        int n = Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
+                        opts.renderDistance().set(n);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Simulation Distance", "Options > Video Settings", options.simulationDistance().get() + " chunks", "options.simulationDistance",
-                (mc, opts) -> {
-                    int cur = opts.simulationDistance().get();
-                    int next = (cur >= 32) ? 8 : cur + 4;
-                    opts.simulationDistance().set(next);
-                    opts.save();
-                    return next + " chunks";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "10", newVal -> {
+                        int n = Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
+                        opts.simulationDistance().set(n);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "GUI Scale", "Options > Video Settings", options.guiScale().get() == 0 ? "Auto" : String.valueOf(options.guiScale().get()), "options.guiScale",
-                (mc, opts) -> {
-                    int cur = opts.guiScale().get();
-                    int next = (cur + 1) % 5;
-                    opts.guiScale().set(next);
-                    opts.save();
-                    return next == 0 ? "Auto" : String.valueOf(next);
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.CHOICE, List.of("Auto", "1", "2", "3", "4"), "Auto", newVal -> {
+                        int s = newVal.equalsIgnoreCase("Auto") ? 0 : Integer.parseInt(newVal.trim());
+                        opts.guiScale().set(s);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Max Framerate", "Options > Video Settings", options.framerateLimit().get() >= 260 ? "Unlimited" : options.framerateLimit().get() + " fps", "options.framerateLimit",
-                (mc, opts) -> {
-                    int cur = opts.framerateLimit().get();
-                    int next = (cur >= 260) ? 30 : (cur < 60 ? 60 : (cur < 120 ? 120 : (cur < 144 ? 144 : 260)));
-                    opts.framerateLimit().set(next);
-                    opts.save();
-                    return next >= 260 ? "Unlimited" : next + " fps";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "120", newVal -> {
+                        int fps = newVal.equalsIgnoreCase("Unlimited") ? 260 : Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
+                        opts.framerateLimit().set(fps);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "VSync", "Options > Video Settings", options.enableVsync().get() ? "ON" : "OFF", "options.enableVsync",
-                (mc, opts) -> {
-                    boolean val = !opts.enableVsync().get();
-                    opts.enableVsync().set(val);
-                    opts.save();
-                    return val ? "ON" : "OFF";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
+                        boolean b = Boolean.parseBoolean(newVal);
+                        opts.enableVsync().set(b);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Fullscreen", "Options > Video Settings", options.fullscreen().get() ? "ON" : "OFF", "options.fullscreen",
-                (mc, opts) -> {
-                    boolean val = !opts.fullscreen().get();
-                    opts.fullscreen().set(val);
-                    opts.save();
-                    return val ? "ON" : "OFF";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
+                        boolean b = Boolean.parseBoolean(newVal);
+                        opts.fullscreen().set(b);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "View Bobbing", "Options > Video Settings", options.bobView().get() ? "ON" : "OFF", "options.bobView",
-                (mc, opts) -> {
-                    boolean val = !opts.bobView().get();
-                    opts.bobView().set(val);
-                    opts.save();
-                    return val ? "ON" : "OFF";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "true", newVal -> {
+                        boolean b = Boolean.parseBoolean(newVal);
+                        opts.bobView().set(b);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Auto-Jump", "Options > Controls", options.autoJump().get() ? "ON" : "OFF", "options.autoJump",
-                (mc, opts) -> {
-                    boolean val = !opts.autoJump().get();
-                    opts.autoJump().set(val);
-                    opts.save();
-                    return val ? "ON" : "OFF";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
+                        boolean b = Boolean.parseBoolean(newVal);
+                        opts.autoJump().set(b);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Mouse Sensitivity", "Options > Controls > Mouse Settings", String.format(Locale.ROOT, "%.0f%%", options.sensitivity().get() * 100), "options.sensitivity",
-                (mc, opts) -> {
-                    double cur = opts.sensitivity().get();
-                    double next = (cur >= 1.0) ? 0.25 : cur + 0.25;
-                    opts.sensitivity().set(next);
-                    opts.save();
-                    return String.format(Locale.ROOT, "%.0f%%", next * 100);
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.DOUBLE, null, "0.5", newVal -> {
+                        double d = Double.parseDouble(newVal.replaceAll("[^0-9.]", ""));
+                        if (d > 1.0) d /= 100.0;
+                        opts.sensitivity().set(d);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Invert Mouse", "Options > Controls > Mouse Settings", options.invertMouseY().get() ? "ON" : "OFF", "options.invertMouse",
-                (mc, opts) -> {
-                    boolean val = !opts.invertMouseY().get();
-                    opts.invertMouseY().set(val);
-                    opts.save();
-                    return val ? "ON" : "OFF";
+                (mc, opts, res, scr, cb) -> {
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
+                        boolean b = Boolean.parseBoolean(newVal);
+                        opts.invertMouseY().set(b);
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
         addSetting(results, seenKeys, "Particles", "Options > Video Settings", String.valueOf(options.particles().get()), "options.particles",
-                (mc, opts) -> {
-                    net.minecraft.server.level.ParticleStatus cur = opts.particles().get();
-                    net.minecraft.server.level.ParticleStatus[] all = net.minecraft.server.level.ParticleStatus.values();
-                    net.minecraft.server.level.ParticleStatus next = all[(cur.ordinal() + 1) % all.length];
-                    opts.particles().set(next);
-                    opts.save();
-                    return String.valueOf(next);
+                (mc, opts, res, scr, cb) -> {
+                    List<String> partChoices = List.of("ALL", "DECREASED", "MINIMAL");
+                    openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.CHOICE, partChoices, "ALL", newVal -> {
+                        opts.particles().set(net.minecraft.server.level.ParticleStatus.valueOf(newVal.toUpperCase(Locale.ROOT)));
+                        opts.save();
+                        return true;
+                    }, cb);
+                    return null;
                 });
 
-        addSetting(results, seenKeys, "High Contrast", "Options > Accessibility Settings", options.highContrast().get() ? "ON" : "OFF", "options.accessibility.high_contrast",
-                (mc, opts) -> {
-                    boolean val = !opts.highContrast().get();
-                    opts.highContrast().set(val);
-                    opts.save();
-                    return val ? "ON" : "OFF";
-                });
-
-        addSetting(results, seenKeys, "Show Subtitles", "Options > Music & Sounds", options.showSubtitles().get() ? "ON" : "OFF", "options.showSubtitles",
-                (mc, opts) -> {
-                    boolean val = !opts.showSubtitles().get();
-                    opts.showSubtitles().set(val);
-                    opts.save();
-                    return val ? "ON" : "OFF";
-                });
-
-        // Sound sources with full path
+        // 2. Sound sources with modal volume slider
         for (SoundSource source : SoundSource.values()) {
             String name = ProviderUtils.formatCamelCase(source.getName()) + " Volume";
             String value = String.format(Locale.ROOT, "%.0f%%", options.getSoundSourceVolume(source) * 100);
             addSetting(results, seenKeys, name, "Options > Music & Sounds", value, "soundCategory." + source.getName(),
-                    (mc, opts) -> {
-                        float cur = opts.getSoundSourceVolume(source);
-                        int step = Math.round(cur * 10f);
-                        int nextStep = (step + 1) % 11;
-                        float nextVal = nextStep / 10f;
-                        opts.getSoundSourceOptionInstance(source).set((double) nextVal);
-                        opts.save();
-                        return String.format(Locale.ROOT, "%.0f%%", nextVal * 100);
+                    (mc, opts, res, scr, cb) -> {
+                        openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.DOUBLE, null, "1.0", newVal -> {
+                            double d = Double.parseDouble(newVal.replaceAll("[^0-9.]", ""));
+                            if (d > 1.0) d /= 100.0;
+                            opts.getSoundSourceOptionInstance(source).set(d);
+                            opts.save();
+                            return true;
+                        }, cb);
+                        return null;
                     });
         }
 
-        // Introspect other OptionInstance methods
+        // 3. Introspect other OptionInstance methods
         for (Method method : Options.class.getMethods()) {
             if (OptionInstance.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0) {
                 try {
@@ -218,58 +235,49 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                         SettingEditor editor = null;
                         Object valObj = instance.get();
                         if (valObj instanceof Boolean) {
-                            editor = (mc, opts, scr, cb) -> {
-                                boolean val = !((Boolean) instance.get());
-                                ((OptionInstance<Boolean>) instance).set(val);
-                                opts.save();
-                                return val ? "ON" : "OFF";
+                            editor = (mc, opts, res, scr, cb) -> {
+                                openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, String.valueOf(instance.get()), newVal -> {
+                                    ((OptionInstance<Boolean>) instance).set(Boolean.parseBoolean(newVal));
+                                    opts.save();
+                                    return true;
+                                }, cb);
+                                return null;
                             };
                         } else if (valObj instanceof Enum<?> e) {
-                            editor = (mc, opts, scr, cb) -> {
-                                Enum<?>[] constants = e.getDeclaringClass().getEnumConstants();
-                                Enum<?> next = constants[(e.ordinal() + 1) % constants.length];
-                                ((OptionInstance<Object>) instance).set(next);
-                                opts.save();
-                                return next.name();
-                            };
-                        } else if (valObj instanceof Integer) {
-                            String finalReadableName = readableName;
-                            String finalPath = path;
-                            editor = (mc, opts, scr, cb) -> {
-                                mc.gui.setScreen(new com.igxxd.globalsearch.gui.GlobalSettingEditScreen(
-                                        scr,
-                                        new SearchResult(SearchResultType.SETTING, "options." + methodName, finalReadableName, finalPath, String.valueOf(instance.get()), "minecraft", "Minecraft", ItemStack.EMPTY, ""),
-                                        com.igxxd.globalsearch.gui.GlobalSettingEditScreen.SettingType.INTEGER,
-                                        List.of(),
-                                        String.valueOf(instance.get()),
-                                        newValStr -> {
-                                            int n = Integer.parseInt(newValStr.trim());
-                                            ((OptionInstance<Integer>) instance).set(n);
+                            Enum<?>[] constants = e.getDeclaringClass().getEnumConstants();
+                            List<String> enumChoices = new ArrayList<>();
+                            for (Enum<?> constant : constants) {
+                                enumChoices.add(constant.name());
+                            }
+                            editor = (mc, opts, res, scr, cb) -> {
+                                openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.CHOICE, enumChoices, ((Enum<?>) instance.get()).name(), newVal -> {
+                                    for (Enum<?> constant : constants) {
+                                        if (constant.name().equalsIgnoreCase(newVal.trim())) {
+                                            ((OptionInstance<Object>) instance).set(constant);
                                             opts.save();
                                             return true;
-                                        },
-                                        cb
-                                ));
+                                        }
+                                    }
+                                    return false;
+                                }, cb);
+                                return null;
+                            };
+                        } else if (valObj instanceof Integer) {
+                            editor = (mc, opts, res, scr, cb) -> {
+                                openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, String.valueOf(instance.get()), newVal -> {
+                                    ((OptionInstance<Integer>) instance).set(Integer.parseInt(newVal.replaceAll("[^0-9]", "")));
+                                    opts.save();
+                                    return true;
+                                }, cb);
                                 return null;
                             };
                         } else if (valObj instanceof Double) {
-                            String finalReadableName = readableName;
-                            String finalPath = path;
-                            editor = (mc, opts, scr, cb) -> {
-                                mc.gui.setScreen(new com.igxxd.globalsearch.gui.GlobalSettingEditScreen(
-                                        scr,
-                                        new SearchResult(SearchResultType.SETTING, "options." + methodName, finalReadableName, finalPath, String.valueOf(instance.get()), "minecraft", "Minecraft", ItemStack.EMPTY, ""),
-                                        com.igxxd.globalsearch.gui.GlobalSettingEditScreen.SettingType.DOUBLE,
-                                        List.of(),
-                                        String.valueOf(instance.get()),
-                                        newValStr -> {
-                                            double d = Double.parseDouble(newValStr.trim());
-                                            ((OptionInstance<Double>) instance).set(d);
-                                            opts.save();
-                                            return true;
-                                        },
-                                        cb
-                                ));
+                            editor = (mc, opts, res, scr, cb) -> {
+                                openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.DOUBLE, null, String.valueOf(instance.get()), newVal -> {
+                                    ((OptionInstance<Double>) instance).set(Double.parseDouble(newVal.trim()));
+                                    opts.save();
+                                    return true;
+                                }, cb);
                                 return null;
                             };
                         }
@@ -373,7 +381,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         SettingEditor editor = settingEditors.get(result.getId());
         if (editor != null) {
             try {
-                String newVal = editor.edit(minecraft, minecraft.options, screen, onValueChanged);
+                String newVal = editor.edit(minecraft, minecraft.options, result, screen, onValueChanged);
                 if (newVal != null) {
                     result.setValue(newVal);
                     if (onValueChanged != null) {
@@ -388,4 +396,3 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         return false;
     }
 }
-

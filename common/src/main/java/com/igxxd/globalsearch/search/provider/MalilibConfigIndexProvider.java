@@ -364,24 +364,16 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
 
         String currentVal = result.getValue() != null ? result.getValue().trim() : "";
 
-        // 1. Instant toggle for booleans
+        com.igxxd.globalsearch.gui.GlobalSettingEditScreen.SettingType settingType = null;
         if ("true".equalsIgnoreCase(currentVal) || "false".equalsIgnoreCase(currentVal)) {
-            boolean curB = Boolean.parseBoolean(currentVal);
-            boolean newB = !curB;
-            if (setMalilibValue(entry, String.valueOf(newB))) {
-                result.setValue(String.valueOf(newB));
-                if (onValueChanged != null) {
-                    onValueChanged.accept(String.valueOf(newB));
-                }
-                return true;
-            }
+            settingType = com.igxxd.globalsearch.gui.GlobalSettingEditScreen.SettingType.BOOLEAN;
         }
 
-        // 2. Open GlobalSettingEditScreen for numbers, strings, enums
+        // Open GlobalSettingEditScreen for all settings
         minecraft.gui.setScreen(new com.igxxd.globalsearch.gui.GlobalSettingEditScreen(
                 screen,
                 result,
-                null,
+                settingType,
                 java.util.List.of(),
                 currentVal,
                 newValStr -> setMalilibValue(entry, newValStr),

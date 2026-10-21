@@ -144,32 +144,29 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
             Class<?> type = entry.field.getType();
             Object currentVal = entry.field.get(entry.configObj);
 
-            // 1. Instant toggle for booleans
+            GlobalSettingEditScreen.SettingType settingType = null;
             if (type == boolean.class || type == Boolean.class) {
-                boolean curB = currentVal instanceof Boolean b && b;
-                boolean newB = !curB;
-                entry.field.set(entry.configObj, newB);
-                saveClothHolder(entry.holder);
-                result.setValue(String.valueOf(newB));
-                if (onValueChanged != null) {
-                    onValueChanged.accept(String.valueOf(newB));
-                }
-                return true;
+                settingType = GlobalSettingEditScreen.SettingType.BOOLEAN;
+            } else if (type == int.class || type == Integer.class || type == long.class || type == Long.class) {
+                settingType = GlobalSettingEditScreen.SettingType.INTEGER;
+            } else if (type == double.class || type == Double.class || type == float.class || type == Float.class) {
+                settingType = GlobalSettingEditScreen.SettingType.DOUBLE;
             }
 
-            // 2. Choice options for enums
+            // Choice options for enums
             List<String> choiceOptions = new ArrayList<>();
             if (type.isEnum()) {
+                settingType = GlobalSettingEditScreen.SettingType.CHOICE;
                 for (Object constant : type.getEnumConstants()) {
                     choiceOptions.add(((Enum<?>) constant).name());
                 }
             }
 
-            // 3. Open GlobalSettingEditScreen for numbers, strings, enums
+            // Open GlobalSettingEditScreen for all settings
             minecraft.gui.setScreen(new GlobalSettingEditScreen(
                     screen,
                     result,
-                    null, // auto-detect type
+                    settingType,
                     choiceOptions,
                     String.valueOf(currentVal),
                     newValStr -> {

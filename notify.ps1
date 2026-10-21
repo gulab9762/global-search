@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Universal Global Setting Editor implemented! In-place boolean toggle and themed setting dialog for numbers, choices, and strings across Xaero's Maps, Vanilla, Cloth Config, NeoForge, and Malilib!"
+    "Global Search: Smart Setting Modal Popup implemented! Identifies value type (Boolean, Integer, Decimal, Choice, Text) with type badges, dual TRUE/FALSE buttons, and a draggable slider bar alongside direct number input for FOV and numeric settings!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }

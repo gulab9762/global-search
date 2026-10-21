@@ -17,6 +17,8 @@ public class ThemedButton extends AbstractWidget {
 
     private final Runnable onPress;
     private boolean activeThemeHighlight = false;
+    private Integer customActiveBg = null;
+    private Integer customActiveBorder = null;
     private boolean hasDot = true;
     private boolean centered = false;
     private String iconPrefix = null;
@@ -29,6 +31,12 @@ public class ThemedButton extends AbstractWidget {
 
     public ThemedButton setActiveThemeHighlight(boolean highlight) {
         this.activeThemeHighlight = highlight;
+        return this;
+    }
+
+    public ThemedButton setCustomActiveColors(int bg, int border) {
+        this.customActiveBg = bg;
+        this.customActiveBorder = border;
         return this;
     }
 
@@ -86,7 +94,9 @@ public class ThemedButton extends AbstractWidget {
 
         if (activeThemeHighlight) {
             // Active / Selected state with rounded corners & top gradient
-            GuiRenderUtils.drawRoundedCard(graphics, x, y, w, h, theme.getActiveBtnGradTop(), theme.getActiveBtnBorder(), 0x33FFFFFF);
+            int bg = customActiveBg != null ? customActiveBg : theme.getActiveBtnGradTop();
+            int border = customActiveBorder != null ? customActiveBorder : theme.getActiveBtnBorder();
+            GuiRenderUtils.drawRoundedCard(graphics, x, y, w, h, bg, border, 0x33FFFFFF);
 
             if (centered) {
                 graphics.centeredText(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, theme.getActiveBtnText());

@@ -136,22 +136,20 @@ public class NeoForgeConfigIndexProvider implements SearchIndexProvider {
             Method getValM = entry.configValue.getClass().getMethod("get");
             Object currentVal = getValM.invoke(entry.configValue);
 
-            // 1. Instant toggle for booleans
-            if (currentVal instanceof Boolean b) {
-                boolean newB = !b;
-                setNeoForgeValue(entry, newB);
-                result.setValue(String.valueOf(newB));
-                if (onValueChanged != null) {
-                    onValueChanged.accept(String.valueOf(newB));
-                }
-                return true;
+            GlobalSettingEditScreen.SettingType settingType = null;
+            if (currentVal instanceof Boolean) {
+                settingType = GlobalSettingEditScreen.SettingType.BOOLEAN;
+            } else if (currentVal instanceof Integer || currentVal instanceof Long) {
+                settingType = GlobalSettingEditScreen.SettingType.INTEGER;
+            } else if (currentVal instanceof Double || currentVal instanceof Float) {
+                settingType = GlobalSettingEditScreen.SettingType.DOUBLE;
             }
 
-            // 2. Open GlobalSettingEditScreen for numbers and strings
+            // Open GlobalSettingEditScreen for all settings
             minecraft.gui.setScreen(new GlobalSettingEditScreen(
                     screen,
                     result,
-                    null,
+                    settingType,
                     List.of(),
                     String.valueOf(currentVal),
                     newValStr -> {
