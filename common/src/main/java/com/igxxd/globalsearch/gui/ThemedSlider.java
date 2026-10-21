@@ -55,17 +55,7 @@ public class ThemedSlider extends AbstractWidget {
         this.max = Math.max(min + 0.0001, max);
     }
 
-    public void ensureRange(double val) {
-        if (val < this.min) {
-            this.min = Math.floor(val);
-        }
-        if (val > this.max) {
-            this.max = Math.ceil(val);
-        }
-    }
-
     public void setValue(double value, boolean notify) {
-        ensureRange(value);
         double clamped = Mth.clamp(value, min, max);
         if (this.isInteger) {
             clamped = Math.round(clamped);

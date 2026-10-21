@@ -222,18 +222,30 @@ public class GlobalSettingEditScreen extends Screen {
             this.valueInput = new EditBox(this.font, inputX + 6, contentY + textOffsetY, inputW - 12, 12, Component.literal("Value"));
             this.valueInput.setBordered(false);
             this.valueInput.setTextColor(theme.getTitleColor());
-            this.valueInput.setValue(formattedInitial);
             this.valueInput.setResponder(text -> {
                 if (updatingFromSlider || numericSlider == null) return;
                 try {
                     String clean = text.replaceAll("[^0-9.-]", "");
-                    if (!clean.isEmpty() && !clean.equals("-")) {
+                    if (!clean.isEmpty() && !clean.equals("-") && !clean.equals(".")) {
                         double typedVal = Double.parseDouble(clean);
-                        numericSlider.ensureRange(typedVal);
+                        double sliderMax = numericSlider.getMax();
+                        if (typedVal > sliderMax) {
+                            typedVal = sliderMax;
+                            updatingFromSlider = true;
+                            if (isInt) {
+                                valueInput.setValue(String.valueOf((long) sliderMax));
+                            } else {
+                                valueInput.setValue(String.format(Locale.ROOT, "%.2f", sliderMax));
+                            }
+                            updatingFromSlider = false;
+                        }
                         numericSlider.setValue(typedVal, false);
                     }
                 } catch (Exception ignored) {}
             });
+            this.updatingFromSlider = true;
+            this.valueInput.setValue(formattedInitial);
+            this.updatingFromSlider = false;
             this.addRenderableWidget(this.valueInput);
             this.setInitialFocus(this.valueInput);
 
@@ -404,41 +416,52 @@ public class GlobalSettingEditScreen extends Screen {
 
     private void adjustInteger(int delta) {
         if (valueInput == null) return;
+        long min = numericSlider != null ? (long) numericSlider.getMin() : Long.MIN_VALUE;
+        long max = numericSlider != null ? (long) numericSlider.getMax() : Long.MAX_VALUE;
         try {
             String clean = valueInput.getValue().replaceAll("[^0-9-]", "");
             long current = clean.isEmpty() ? 0 : Long.parseLong(clean);
             long next = current + delta;
+            if (next > max) next = max;
+            if (next < min) next = min;
             valueInput.setValue(String.valueOf(next));
             if (numericSlider != null) {
-                numericSlider.ensureRange(next);
                 numericSlider.setValue(next, false);
             }
         } catch (Exception ignored) {
-            valueInput.setValue(String.valueOf(delta));
+            long next = delta;
+            if (next > max) next = max;
+            if (next < min) next = min;
+            valueInput.setValue(String.valueOf(next));
             if (numericSlider != null) {
-                numericSlider.ensureRange(delta);
-                numericSlider.setValue(delta, false);
+                numericSlider.setValue(next, false);
             }
         }
     }
 
     private void adjustDouble(double delta) {
         if (valueInput == null) return;
+        double min = numericSlider != null ? numericSlider.getMin() : -Double.MAX_VALUE;
+        double max = numericSlider != null ? numericSlider.getMax() : Double.MAX_VALUE;
         try {
             String clean = valueInput.getValue().replaceAll("[^0-9.-]", "");
             double current = clean.isEmpty() ? 0.0 : Double.parseDouble(clean);
             double next = current + delta;
+            if (next > max) next = max;
+            if (next < min) next = min;
             double rounded = Math.round(next * 1000.0) / 1000.0;
             valueInput.setValue(String.valueOf(rounded));
             if (numericSlider != null) {
-                numericSlider.ensureRange(rounded);
                 numericSlider.setValue(rounded, false);
             }
         } catch (Exception ignored) {
-            valueInput.setValue(String.valueOf(delta));
+            double next = delta;
+            if (next > max) next = max;
+            if (next < min) next = min;
+            double rounded = Math.round(next * 1000.0) / 1000.0;
+            valueInput.setValue(String.valueOf(rounded));
             if (numericSlider != null) {
-                numericSlider.ensureRange(delta);
-                numericSlider.setValue(delta, false);
+                numericSlider.setValue(rounded, false);
             }
         }
     }
@@ -458,7 +481,6 @@ public class GlobalSettingEditScreen extends Screen {
             if (numericSlider != null) {
                 try {
                     double d = Double.parseDouble(defaultValue.trim());
-                    numericSlider.ensureRange(d);
                     numericSlider.setValue(d, false);
                 } catch (Exception ignored) {}
             }
@@ -473,6 +495,20 @@ public class GlobalSettingEditScreen extends Screen {
             finalValue = this.choiceOptions.get(this.currentChoiceIndex);
         } else if (valueInput != null) {
             finalValue = valueInput.getValue().trim();
+            if (numericSlider != null) {
+                try {
+                    double val = Double.parseDouble(finalValue.replaceAll("[^0-9.-]", ""));
+                    double min = numericSlider.getMin();
+                    double max = numericSlider.getMax();
+                    if (val > max) {
+                        val = max;
+                        finalValue = (this.settingType == SettingType.INTEGER) ? String.valueOf((long) val) : String.valueOf(val);
+                    } else if (val < min) {
+                        val = min;
+                        finalValue = (this.settingType == SettingType.INTEGER) ? String.valueOf((long) val) : String.valueOf(val);
+                    }
+                } catch (Exception ignored) {}
+            }
         } else {
             cancel();
             return;

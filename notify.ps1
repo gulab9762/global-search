@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Value input box vertically centered with clean numeric formatting, slider bounds moved safely above track, and value type badge now dynamically adopts the active theme colors!"
+    "Global Search: Scrollbar & input box max value validation strictly enforced! Step buttons (+10/+1) and direct typing clamp to max limit."
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }
