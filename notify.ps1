@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Scrollbar & input box max value validation strictly enforced! Step buttons (+10/+1) and direct typing clamp to max limit."
+    "Global Search: Obsidian Glass set as default theme with sleek translucent frosted glass background!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }

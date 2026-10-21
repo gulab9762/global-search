@@ -5,18 +5,42 @@ package com.igxxd.globalsearch.gui;
  */
 public enum SearchTheme {
 
+    OBSIDIAN_GLASS(
+            "Obsidian Glass",
+            "💎",
+            0x880C0F18, // screenBg (translucent dark glass overlay)
+            0xB0121622, // panelBg (frosted translucent panel)
+            0xEE1E2638, // panelBorder
+            0xFF2563EB, // panelBorderTop
+            0x90181D2C, // cardBg (translucent card)
+            0xC021283C, // cardHoverBg
+            0xDD263248, // cardBorder
+            0xFF3B82F6, // cardBorderHover
+            0xA0141926, // searchBg
+            0xDD263248, // searchBorder
+            0xFF3B82F6, // searchBorderFocus
+            0xFF60A5FA, // headerColor
+            0xFF38BDF8, // accentColor
+            0xFFF8FAFC, // titleColor
+            0xFF94A3B8, // mutedTextColor
+            0xDD1D4ED8, // activeBtnGradTop
+            0xDD1E3A8A, // activeBtnGradBottom
+            0xFF3B82F6, // activeBtnBorder
+            0xFF93C5FD  // activeBtnText
+    ),
+
     NETHERITE_RPG(
             "Netherite RPG",
             "⚔️",
-            0xEE141215, // screenBg
-            0xEE181518, // panelBg
+            0x99141215, // screenBg
+            0xCC181518, // panelBg
             0xFF3D2C25, // panelBorder
             0xFF5A3D31, // panelBorderTop
-            0xEE1E191D, // cardBg
-            0xEE272025, // cardHoverBg
+            0xB81E191D, // cardBg
+            0xD4272025, // cardHoverBg
             0xFF3A2B25, // cardBorder
             0xFF8C5738, // cardBorderHover
-            0xEE1A1619, // searchBg
+            0xB81A1619, // searchBg
             0xFF5A3D31, // searchBorder
             0xFFD97706, // searchBorderFocus
             0xFFFFAA00, // headerColor
@@ -29,42 +53,18 @@ public enum SearchTheme {
             0xFFFBBF24  // activeBtnText
     ),
 
-    OBSIDIAN_GLASS(
-            "Obsidian Glass",
-            "💎",
-            0xEE0C0F18, // screenBg
-            0xEE121622, // panelBg
-            0xFF1E2638, // panelBorder
-            0xFF2563EB, // panelBorderTop
-            0xEE181D2C, // cardBg
-            0xEE21283C, // cardHoverBg
-            0xFF263248, // cardBorder
-            0xFF3B82F6, // cardBorderHover
-            0xEE141926, // searchBg
-            0xFF263248, // searchBorder
-            0xFF3B82F6, // searchBorderFocus
-            0xFF60A5FA, // headerColor
-            0xFF38BDF8, // accentColor
-            0xFFF8FAFC, // titleColor
-            0xFF94A3B8, // mutedTextColor
-            0xFF1D4ED8, // activeBtnGradTop
-            0xFF1E3A8A, // activeBtnGradBottom
-            0xFF3B82F6, // activeBtnBorder
-            0xFF93C5FD  // activeBtnText
-    ),
-
     RAYCAST_CLEAN(
             "Raycast Clean",
             "⚡",
-            0xF00F1115, // screenBg
-            0xF012151B, // panelBg
+            0x990F1115, // screenBg
+            0xCC12151B, // panelBg
             0xFF1E232D, // panelBorder
             0xFF10B981, // panelBorderTop
-            0xEE141820, // cardBg
-            0xEE1A202C, // cardHoverBg
+            0xB8141820, // cardBg
+            0xD41A202C, // cardHoverBg
             0xFF1F2532, // cardBorder
             0xFF2E384D, // cardBorderHover
-            0xEE161922, // searchBg
+            0xB8161922, // searchBg
             0xFF282F3D, // searchBorder
             0xFF10B981, // searchBorderFocus
             0xFF34D399, // headerColor
@@ -80,15 +80,15 @@ public enum SearchTheme {
     ENDER_TWILIGHT(
             "Ender Twilight",
             "🔮",
-            0xEE0D0A17, // screenBg
-            0xEE120E1D, // panelBg
+            0x990D0A17, // screenBg
+            0xCC120E1D, // panelBg
             0xFF2E1C4D, // panelBorder
             0xFFA855F7, // panelBorderTop
-            0xEE1C1430, // cardBg
-            0xEE261B42, // cardHoverBg
+            0xB81C1430, // cardBg
+            0xD4261B42, // cardHoverBg
             0xFF341F59, // cardBorder
             0xFFA855F7, // cardBorderHover
-            0xEE1A132C, // searchBg
+            0xB81A132C, // searchBg
             0xFF3A2463, // searchBorder
             0xFFA855F7, // searchBorderFocus
             0xFFC084FC, // headerColor
@@ -101,7 +101,7 @@ public enum SearchTheme {
             0xFFE9D5FF  // activeBtnText
     );
 
-    private static SearchTheme currentTheme = NETHERITE_RPG;
+    private static SearchTheme currentTheme = OBSIDIAN_GLASS;
 
     private final String displayName;
     private final String icon;
