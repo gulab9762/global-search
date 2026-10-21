@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Bottom helper text, keybind listening prompt, and expanded details now dynamically follow the active theme colors!"
+    "Global Search: Value input box vertically centered with clean numeric formatting, slider bounds moved safely above track, and value type badge now dynamically adopts the active theme colors!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }
