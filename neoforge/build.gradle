@@ -11,6 +11,9 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            if (project.hasProperty('debugClient') || System.getProperty('debugClient') != null) {
+                jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+            }
         }
         server {
             server()

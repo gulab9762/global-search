@@ -22,31 +22,32 @@ global-search/
 └── gradle.properties          # Version configurations (MC 26.3, Fabric, NeoForge, Java 25)
 ```
 
-## Running the Client in VS Code (Windows)
+## Running the Client in VS Code
 
 1. Open the Command Palette in VS Code (`Ctrl+Shift+P`).
 2. Type and select **Tasks: Run Task**.
 3. Choose either:
-   - **Start Fabric Client (Windows)**
-   - **Start NeoForge Client (Windows)**
+   - **Minecraft: Run Fabric Client**
+   - **Minecraft: Run NeoForge Client**
+   - **Minecraft: Build All**
 
 Or use the default test task shortcut (`Terminal -> Run Test Task`).
 
-## Running via Command Line (PowerShell / CMD)
+## Running via Command Line (Bash / Terminal)
 
 - **Run Fabric Client**:
-  ```powershell
-  .\gradlew.bat :fabric:runClient
+  ```bash
+  ./gradlew :fabric:runClient
   ```
 
 - **Run NeoForge Client**:
-  ```powershell
-  .\gradlew.bat :neoforge:runClient
+  ```bash
+  ./gradlew :neoforge:runClient
   ```
 
 - **Build all jars**:
-  ```powershell
-  .\gradlew.bat build
+  ```bash
+  ./gradlew buildAllMods
   ```
 
 ---

@@ -3,6 +3,39 @@
   "configurations": [
     {
       "type": "java",
+      "name": "Fabric Client (:fabric)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/fabric\\runs\\client",
+      "console": "integratedTerminal",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config\u003dC:\\Users\\Gulab\\IdeaProjects\\global-search\\.gradle\\loom-cache\\projects\\fabric\\launch.cfg -Dfabric.dli.env\u003dclient -Dfabric.dli.main\u003dnet.fabricmc.loader.impl.launch.knot.KnotClient -XX:StackShadowPages\u003d32 --sun-misc-unsafe-memory-access\u003dallow --enable-native-access\u003dALL-UNNAMED",
+      "args": "",
+      "env": {},
+      "projectName": "fabric"
+    },
+    {
+      "type": "java",
+      "name": "Fabric Server (:fabric)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/fabric\\runs\\server",
+      "console": "integratedTerminal",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config\u003dC:\\Users\\Gulab\\IdeaProjects\\global-search\\.gradle\\loom-cache\\projects\\fabric\\launch.cfg -Dfabric.dli.env\u003dserver -Dfabric.dli.main\u003dnet.fabricmc.loader.impl.launch.knot.KnotServer --sun-misc-unsafe-memory-access\u003dallow --enable-native-access\u003dALL-UNNAMED",
+      "args": "nogui nogui",
+      "env": {},
+      "projectName": "fabric"
+    },
+    {
+      "type": "java",
+      "name": "Attach to Minecraft (Port 5005)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005
+    },
+    {
+      "type": "java",
       "request": "launch",
       "name": "neoforge - Client",
       "presentation": {

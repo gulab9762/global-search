@@ -20,6 +20,9 @@ loom {
             setConfigName('Fabric Client')
             ideConfigGenerated(true)
             runDir('runs/client')
+            if (project.hasProperty('debugClient') || System.getProperty('debugClient') != null) {
+                vmArg("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005")
+            }
         }
         server {
             server()
