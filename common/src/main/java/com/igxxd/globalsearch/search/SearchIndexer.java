@@ -45,7 +45,8 @@ public class SearchIndexer {
             new MalilibConfigIndexProvider(),
             new ClothConfigIndexProvider(),
             new NeoForgeConfigIndexProvider(),
-            new XaeroConfigIndexProvider()
+            new XaeroConfigIndexProvider(),
+            new SodiumConfigIndexProvider()
     ));
 
     /**
