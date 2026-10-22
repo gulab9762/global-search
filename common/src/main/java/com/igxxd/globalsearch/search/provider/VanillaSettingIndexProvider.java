@@ -32,6 +32,11 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         return "Vanilla Settings";
     }
 
+    @Override
+    public int getPriority() {
+        return 90;
+    }
+
     private void openModal(Minecraft mc, Screen scr, SearchResult result,
                            GlobalSettingEditScreen.SettingType type,
                            List<String> choices, String defaultVal,

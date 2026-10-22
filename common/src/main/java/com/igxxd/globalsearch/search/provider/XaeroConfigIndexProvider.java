@@ -41,6 +41,11 @@ public class XaeroConfigIndexProvider implements SearchIndexProvider {
     }
 
     @Override
+    public int getPriority() {
+        return 80;
+    }
+
+    @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
         optionMap.clear();
 

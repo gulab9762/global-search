@@ -51,6 +51,11 @@ public class SodiumConfigIndexProvider implements SearchIndexProvider {
     }
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
         optionMap.clear();
 

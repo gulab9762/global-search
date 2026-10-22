@@ -19,6 +19,14 @@ public interface SearchIndexProvider {
     String getName();
 
     /**
+     * Priority tier for deduplication. Higher priority providers supersede lower ones.
+     * Default is 50. Modded live frameworks: 100. Vanilla: 90. Dedicated mod providers: 80. File fallback: 20.
+     */
+    default int getPriority() {
+        return 50;
+    }
+
+    /**
      * Index available entries and append them to the results list.
      *
      * @param minecraft Minecraft client instance

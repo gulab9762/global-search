@@ -46,7 +46,8 @@ public class SearchIndexer {
             new ClothConfigIndexProvider(),
             new NeoForgeConfigIndexProvider(),
             new XaeroConfigIndexProvider(),
-            new SodiumConfigIndexProvider()
+            new SodiumConfigIndexProvider(),
+            new GenericConfigFileIndexProvider()
     ));
 
     /**
@@ -113,9 +114,11 @@ public class SearchIndexer {
         if (IS_INDEXING.compareAndSet(false, true)) {
             return CompletableFuture.supplyAsync(() -> {
                 try {
-                    List<CompletableFuture<List<SearchResult>>> futures = new ArrayList<>();
+                    record ProviderTask(SearchIndexProvider provider, CompletableFuture<List<SearchResult>> future) {}
+                    List<ProviderTask> tasks = new ArrayList<>();
+
                     for (SearchIndexProvider provider : PROVIDERS) {
-                        futures.add(CompletableFuture.supplyAsync(() -> {
+                        CompletableFuture<List<SearchResult>> f = CompletableFuture.supplyAsync(() -> {
                             List<SearchResult> list = new ArrayList<>();
                             Set<String> seen = new HashSet<>();
                             try {
@@ -124,20 +127,49 @@ public class SearchIndexer {
                                 Constants.LOG.debug("Provider '{}' failed or skipped: {}", provider.getName(), t.getMessage());
                             }
                             return list;
-                        }, ASYNC_EXECUTOR));
+                        }, ASYNC_EXECUTOR);
+                        tasks.add(new ProviderTask(provider, f));
                     }
 
-                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                    // Sort tasks by provider priority descending (Runtime engines: 100/90 > Dedicated: 80 > File fallback: 20)
+                    tasks.sort((a, b) -> Integer.compare(b.provider().getPriority(), a.provider().getPriority()));
+
+                    for (ProviderTask task : tasks) {
+                        try {
+                            task.future().join();
+                        } catch (Throwable ignored) {}
+                    }
 
                     List<SearchResult> combined = new ArrayList<>();
                     Set<String> globalSeen = new HashSet<>();
-                    for (CompletableFuture<List<SearchResult>> f : futures) {
+                    Set<String> normalizedSettingKeys = new HashSet<>();
+
+                    for (ProviderTask task : tasks) {
                         try {
-                            for (SearchResult res : f.get()) {
+                            List<SearchResult> list = task.future().get();
+                            for (SearchResult res : list) {
                                 String uniqueId = !res.getId().isEmpty() ? res.getId() : (res.getPath() + ":" + res.getTitle());
-                                String key = res.getType().getId() + ":" + res.getModId() + ":" + uniqueId.toLowerCase(Locale.ROOT);
-                                if (globalSeen.add(key)) {
-                                    combined.add(res);
+                                String exactKey = res.getType().getId() + ":" + res.getModId() + ":" + uniqueId.toLowerCase(Locale.ROOT);
+
+                                // For settings, generate a normalized key (modId + canonicalSettingName)
+                                // to deduplicate across file-readers and runtime providers
+                                if (SearchResultType.SETTING.equals(res.getType())) {
+                                    String canonicalName = res.getTitle().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+                                    String normKey = res.getModId().toLowerCase(Locale.ROOT) + ":" + canonicalName;
+
+                                    // If a higher priority provider already registered this setting for this mod, skip lower priority duplicate
+                                    if (normalizedSettingKeys.contains(normKey)) {
+                                        continue;
+                                    }
+
+                                    if (globalSeen.add(exactKey)) {
+                                        normalizedSettingKeys.add(normKey);
+                                        combined.add(res);
+                                    }
+                                } else {
+                                    if (globalSeen.add(exactKey)) {
+                                        combined.add(res);
+                                    }
                                 }
                             }
                         } catch (Throwable ignored) {}
@@ -178,14 +210,42 @@ public class SearchIndexer {
 
     public static List<SearchResult> indexAll(Minecraft minecraft) {
         List<SearchResult> results = new ArrayList<>();
-        Set<String> seenKeys = new HashSet<>();
+        Set<String> globalSeen = new HashSet<>();
+        Set<String> normalizedSettingKeys = new HashSet<>();
         if (minecraft == null) {
             return results;
         }
 
-        for (SearchIndexProvider provider : PROVIDERS) {
+        List<SearchIndexProvider> sortedProviders = new ArrayList<>(PROVIDERS);
+        sortedProviders.sort((a, b) -> Integer.compare(b.getPriority(), a.getPriority()));
+
+        for (SearchIndexProvider provider : sortedProviders) {
+            List<SearchResult> list = new ArrayList<>();
+            Set<String> seen = new HashSet<>();
             try {
-                provider.index(minecraft, results, seenKeys);
+                provider.index(minecraft, list, seen);
+                for (SearchResult res : list) {
+                    String uniqueId = !res.getId().isEmpty() ? res.getId() : (res.getPath() + ":" + res.getTitle());
+                    String exactKey = res.getType().getId() + ":" + res.getModId() + ":" + uniqueId.toLowerCase(Locale.ROOT);
+
+                    if (SearchResultType.SETTING.equals(res.getType())) {
+                        String canonicalName = res.getTitle().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+                        String normKey = res.getModId().toLowerCase(Locale.ROOT) + ":" + canonicalName;
+
+                        if (normalizedSettingKeys.contains(normKey)) {
+                            continue;
+                        }
+
+                        if (globalSeen.add(exactKey)) {
+                            normalizedSettingKeys.add(normKey);
+                            results.add(res);
+                        }
+                    } else {
+                        if (globalSeen.add(exactKey)) {
+                            results.add(res);
+                        }
+                    }
+                }
             } catch (Throwable t) {
                 Constants.LOG.debug("Provider '{}' failed or was skipped: {}", provider.getName(), t.getMessage());
             }

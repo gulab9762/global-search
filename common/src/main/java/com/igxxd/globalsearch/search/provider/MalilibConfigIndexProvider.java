@@ -38,6 +38,11 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
     }
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void index(Minecraft minecraft, List<SearchResult> results, Set<String> seenKeys) {
         malilibConfigs.clear();
         // 1. Hotkeys from InputEventHandler.getKeybindManager()
