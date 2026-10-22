@@ -60,6 +60,16 @@ public class CategoryNavigationList extends ObjectSelectionList<CategoryNavigati
     }
 
     @Override
+    protected void extractListBackground(net.minecraft.client.gui.GuiGraphicsExtractor graphics) {
+        // Suppress Minecraft's default opaque dirt/dark background so world is visible behind
+    }
+
+    @Override
+    protected void extractListSeparators(net.minecraft.client.gui.GuiGraphicsExtractor graphics) {
+        // Suppress default opaque list separators
+    }
+
+    @Override
     protected boolean isOverScrollbar(double mouseX, double mouseY) {
         return this.scrollable()
                 && mouseX >= this.getX() + this.width - 10

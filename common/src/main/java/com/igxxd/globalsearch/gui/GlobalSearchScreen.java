@@ -497,8 +497,7 @@ public class GlobalSearchScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         SearchTheme theme = SearchTheme.getCurrent();
 
-        // Screen atmosphere
-        this.extractTransparentBackground(graphics);
+        // Screen atmosphere - soft translucent tint so in-game world stays clearly visible
         graphics.fill(0, 0, this.width, this.height, theme.getScreenBg());
         graphics.fillGradient(0, 0, this.width, 36, theme.getActiveBtnGradTop() & 0x66FFFFFF, 0x00000000);
 
