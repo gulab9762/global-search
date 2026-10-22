@@ -133,7 +133,8 @@ public class SearchIndexer {
                     for (CompletableFuture<List<SearchResult>> f : futures) {
                         try {
                             for (SearchResult res : f.get()) {
-                                String key = res.getType().name() + ":" + res.getPath().toLowerCase(Locale.ROOT);
+                                String uniqueId = !res.getId().isEmpty() ? res.getId() : (res.getPath() + ":" + res.getTitle());
+                                String key = res.getType().getId() + ":" + res.getModId() + ":" + uniqueId.toLowerCase(Locale.ROOT);
                                 if (globalSeen.add(key)) {
                                     combined.add(res);
                                 }

@@ -212,21 +212,28 @@ public class XaeroConfigIndexProvider implements SearchIndexProvider {
                 Method getCurrentProfileM = clientConfigManager.getClass().getMethod("getCurrentProfile");
                 Object profile = getCurrentProfileM.invoke(clientConfigManager);
                 if (profile != null) {
+                    boolean modified = false;
                     for (Method m : profile.getClass().getMethods()) {
                         if ("set".equals(m.getName()) && m.getParameterCount() == 2) {
                             m.invoke(profile, optionObj, newVal);
+                            modified = true;
                             break;
                         }
                     }
-                    Method getIO_M = channel.getClass().getMethod("getClientConfigProfileIO");
-                    Object profileIO = getIO_M.invoke(channel);
-                    if (profileIO != null) {
-                        for (Method m : profileIO.getClass().getMethods()) {
-                            if ("save".equals(m.getName()) && m.getParameterCount() == 1) {
-                                m.invoke(profileIO, profile);
-                                return true;
+                    if (modified) {
+                        try {
+                            Method getIO_M = channel.getClass().getMethod("getClientConfigProfileIO");
+                            Object profileIO = getIO_M.invoke(channel);
+                            if (profileIO != null) {
+                                for (Method m : profileIO.getClass().getMethods()) {
+                                    if ("save".equals(m.getName()) && m.getParameterCount() == 1) {
+                                        m.invoke(profileIO, profile);
+                                        break;
+                                    }
+                                }
                             }
-                        }
+                        } catch (Throwable ignored) {}
+                        return true;
                     }
                 }
             } catch (Throwable ignored) {}
@@ -239,21 +246,28 @@ public class XaeroConfigIndexProvider implements SearchIndexProvider {
                     Method getM = primaryMgr.getClass().getMethod("get");
                     Object primaryCfg = getM.invoke(primaryMgr);
                     if (primaryCfg != null) {
+                        boolean modified = false;
                         for (Method m : primaryCfg.getClass().getMethods()) {
                             if ("set".equals(m.getName()) && m.getParameterCount() == 2) {
                                 m.invoke(primaryCfg, optionObj, newVal);
+                                modified = true;
                                 break;
                             }
                         }
-                        Method getPrimaryIOM = channel.getClass().getMethod("getPrimaryClientConfigManagerIO");
-                        Object primaryIO = getPrimaryIOM.invoke(channel);
-                        if (primaryIO != null) {
-                            for (Method m : primaryIO.getClass().getMethods()) {
-                                if ("save".equals(m.getName()) && m.getParameterCount() == 1) {
-                                    m.invoke(primaryIO, primaryCfg);
-                                    return true;
+                        if (modified) {
+                            try {
+                                Method getPrimaryIOM = channel.getClass().getMethod("getPrimaryClientConfigManagerIO");
+                                Object primaryIO = getPrimaryIOM.invoke(channel);
+                                if (primaryIO != null) {
+                                    for (Method m : primaryIO.getClass().getMethods()) {
+                                        if ("save".equals(m.getName()) && m.getParameterCount() == 1) {
+                                            m.invoke(primaryIO, primaryCfg);
+                                            break;
+                                        }
+                                    }
                                 }
-                            }
+                            } catch (Throwable ignored) {}
+                            return true;
                         }
                     }
                 }

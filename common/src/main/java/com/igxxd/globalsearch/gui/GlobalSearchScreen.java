@@ -60,18 +60,25 @@ public class GlobalSearchScreen extends Screen {
     @Override
     protected void init() {
         if (this.minecraft != null) {
-            if (SearchIndexer.hasCachedResults()) {
-                this.allIndexedResults = SearchIndexer.getCachedResults();
-            } else {
-                this.isIndexing = true;
-                SearchIndexer.indexAllAsync(this.minecraft, results -> {
-                    this.allIndexedResults = results;
-                    this.isIndexing = false;
-                    if (this.categoryList != null) {
-                        this.categoryList.rebuildEntries();
-                    }
-                    updateFilter();
-                });
+            if (this.allIndexedResults.isEmpty()) {
+                if (SearchIndexer.hasCachedResults()) {
+                    this.allIndexedResults = SearchIndexer.getCachedResults();
+                } else {
+                    this.isIndexing = true;
+                    SearchIndexer.indexAllAsync(this.minecraft, results -> {
+                        this.allIndexedResults = results;
+                        this.isIndexing = false;
+                        if (this.categoryList != null) {
+                            this.categoryList.rebuildEntries();
+                        }
+                        updateFilter();
+                    });
+                }
+            } else if (SearchIndexer.hasCachedResults()) {
+                List<SearchResult> cached = SearchIndexer.getCachedResults();
+                if (!cached.isEmpty() && cached.size() >= this.allIndexedResults.size()) {
+                    this.allIndexedResults = cached;
+                }
             }
         }
 
