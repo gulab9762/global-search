@@ -8,23 +8,23 @@ public enum SearchTheme {
     OBSIDIAN_GLASS(
             "Obsidian Glass",
             "💎",
-            0x880C0F18, // screenBg (translucent dark glass overlay)
-            0xB0121622, // panelBg (frosted translucent panel)
-            0xEE1E2638, // panelBorder
-            0xFF2563EB, // panelBorderTop
-            0x90181D2C, // cardBg (translucent card)
-            0xC021283C, // cardHoverBg
-            0xDD263248, // cardBorder
+            0x550C0F18, // screenBg (more translucent dark glass overlay)
+            0x77121622, // panelBg (frosted translucent panel)
+            0xAA1E2638, // panelBorder
+            0xDD2563EB, // panelBorderTop
+            0x66181D2C, // cardBg (translucent glass card)
+            0x9921283C, // cardHoverBg
+            0xBB263248, // cardBorder
             0xFF3B82F6, // cardBorderHover
-            0xA0141926, // searchBg
-            0xDD263248, // searchBorder
+            0x77141926, // searchBg
+            0xAA263248, // searchBorder
             0xFF3B82F6, // searchBorderFocus
             0xFF60A5FA, // headerColor
             0xFF38BDF8, // accentColor
             0xFFF8FAFC, // titleColor
             0xFF94A3B8, // mutedTextColor
-            0xDD1D4ED8, // activeBtnGradTop
-            0xDD1E3A8A, // activeBtnGradBottom
+            0xCC1D4ED8, // activeBtnGradTop
+            0xCC1E3A8A, // activeBtnGradBottom
             0xFF3B82F6, // activeBtnBorder
             0xFF93C5FD  // activeBtnText
     ),
@@ -32,23 +32,23 @@ public enum SearchTheme {
     NETHERITE_RPG(
             "Netherite RPG",
             "⚔️",
-            0x99141215, // screenBg
-            0xCC181518, // panelBg
-            0xFF3D2C25, // panelBorder
-            0xFF5A3D31, // panelBorderTop
-            0xB81E191D, // cardBg
-            0xD4272025, // cardHoverBg
-            0xFF3A2B25, // cardBorder
+            0x55141215, // screenBg
+            0x77181518, // panelBg
+            0xAA3D2C25, // panelBorder
+            0xDD5A3D31, // panelBorderTop
+            0x661E191D, // cardBg
+            0x99272025, // cardHoverBg
+            0xBB3A2B25, // cardBorder
             0xFF8C5738, // cardBorderHover
-            0xB81A1619, // searchBg
-            0xFF5A3D31, // searchBorder
+            0x771A1619, // searchBg
+            0xAA5A3D31, // searchBorder
             0xFFD97706, // searchBorderFocus
             0xFFFFAA00, // headerColor
             0xFFFBBF24, // accentColor
             0xFFFFF8F0, // titleColor
             0xFFA89F91, // mutedTextColor
-            0xFF442A22, // activeBtnGradTop
-            0xFF2D1C17, // activeBtnGradBottom
+            0xCC442A22, // activeBtnGradTop
+            0xCC2D1C17, // activeBtnGradBottom
             0xFFB45309, // activeBtnBorder
             0xFFFBBF24  // activeBtnText
     ),
@@ -56,23 +56,23 @@ public enum SearchTheme {
     RAYCAST_CLEAN(
             "Raycast Clean",
             "⚡",
-            0x990F1115, // screenBg
-            0xCC12151B, // panelBg
-            0xFF1E232D, // panelBorder
-            0xFF10B981, // panelBorderTop
-            0xB8141820, // cardBg
-            0xD41A202C, // cardHoverBg
-            0xFF1F2532, // cardBorder
+            0x550F1115, // screenBg
+            0x7712151B, // panelBg
+            0xAA1E232D, // panelBorder
+            0xDD10B981, // panelBorderTop
+            0x66141820, // cardBg
+            0x991A202C, // cardHoverBg
+            0xBB1F2532, // cardBorder
             0xFF2E384D, // cardBorderHover
-            0xB8161922, // searchBg
-            0xFF282F3D, // searchBorder
+            0x77161922, // searchBg
+            0xAA282F3D, // searchBorder
             0xFF10B981, // searchBorderFocus
             0xFF34D399, // headerColor
             0xFF10B981, // accentColor
             0xFFF1F5F9, // titleColor
             0xFF8A99AD, // mutedTextColor
-            0xFF1B3D33, // activeBtnGradTop
-            0xFF132B24, // activeBtnGradBottom
+            0xCC1B3D33, // activeBtnGradTop
+            0xCC132B24, // activeBtnGradBottom
             0xFF10B981, // activeBtnBorder
             0xFF6EE7B7  // activeBtnText
     ),
@@ -80,23 +80,23 @@ public enum SearchTheme {
     ENDER_TWILIGHT(
             "Ender Twilight",
             "🔮",
-            0x990D0A17, // screenBg
-            0xCC120E1D, // panelBg
-            0xFF2E1C4D, // panelBorder
-            0xFFA855F7, // panelBorderTop
-            0xB81C1430, // cardBg
-            0xD4261B42, // cardHoverBg
-            0xFF341F59, // cardBorder
+            0x550D0A17, // screenBg
+            0x77120E1D, // panelBg
+            0xAA2E1C4D, // panelBorder
+            0xDDA855F7, // panelBorderTop
+            0x661C1430, // cardBg
+            0x99261B42, // cardHoverBg
+            0xBB341F59, // cardBorder
             0xFFA855F7, // cardBorderHover
-            0xB81A132C, // searchBg
-            0xFF3A2463, // searchBorder
+            0x771A132C, // searchBg
+            0xAA3A2463, // searchBorder
             0xFFA855F7, // searchBorderFocus
             0xFFC084FC, // headerColor
             0xFFE879F9, // accentColor
             0xFFFAF5FF, // titleColor
             0xFFA79BBB, // mutedTextColor
-            0xFF4A1D96, // activeBtnGradTop
-            0xFF2E1065, // activeBtnGradBottom
+            0xCC4A1D96, // activeBtnGradTop
+            0xCC2E1065, // activeBtnGradBottom
             0xFFA855F7, // activeBtnBorder
             0xFFE9D5FF  // activeBtnText
     );
