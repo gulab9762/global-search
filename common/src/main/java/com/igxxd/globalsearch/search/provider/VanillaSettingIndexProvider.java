@@ -362,6 +362,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
             SearchResult.Builder builder = SearchResult.builder(SearchResultType.SETTING, id, title)
                     .path(path)
                     .value(value)
+                    .defaultValue(value)
                     .modId("minecraft")
                     .modName("Minecraft")
                     .description(desc)

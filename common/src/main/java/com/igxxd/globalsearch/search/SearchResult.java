@@ -31,8 +31,9 @@ public class SearchResult {
     private ItemStack icon;
     private String description;
     private final String tags;
-    private final String searchTarget;
+    private String searchTarget;
     private final boolean editable;
+    private final String defaultValue;
     private final ResultEditHandler editHandler;
     private final SearchIndexProvider provider;
 
@@ -49,10 +50,14 @@ public class SearchResult {
     }
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, net.minecraft.world.item.Item item, String description) {
-        this(type, id, title, path, value, modId, modName, icon, item, description, false, null, null);
+        this(type, id, title, path, value, modId, modName, icon, item, description, false, null, null, null);
     }
 
     public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, net.minecraft.world.item.Item item, String description, boolean editable, ResultEditHandler editHandler, SearchIndexProvider provider) {
+        this(type, id, title, path, value, modId, modName, icon, item, description, editable, null, editHandler, provider);
+    }
+
+    public SearchResult(SearchResultType type, String id, String title, String path, String value, String modId, String modName, ItemStack icon, net.minecraft.world.item.Item item, String description, boolean editable, String defaultValue, ResultEditHandler editHandler, SearchIndexProvider provider) {
         this.type = type;
         this.id = id != null ? id : "";
         this.title = title != null ? title : "";
@@ -64,6 +69,7 @@ public class SearchResult {
         this.icon = this.initialIcon;
         this.item = item;
         this.editable = editable;
+        this.defaultValue = defaultValue;
         this.editHandler = editHandler;
         this.provider = provider;
         
@@ -103,8 +109,11 @@ public class SearchResult {
         }
         this.description = desc;
 
-        // Pre-compute lower-case search target for fast substring and multi-word matching
-        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + this.description.replace('\n', ' ') + " " + this.tags + " " + type.name())
+        computeSearchTarget();
+    }
+
+    private void computeSearchTarget() {
+        this.searchTarget = (this.title + " " + this.path + " " + this.value + " " + this.modName + " " + this.modId + " " + this.id + " " + (this.description != null ? this.description.replace('\n', ' ') : "") + " " + this.tags + " " + type.name())
                 .toLowerCase(Locale.ROOT);
     }
 
@@ -130,6 +139,11 @@ public class SearchResult {
 
     public void setValue(String value) {
         this.value = value != null ? value : "";
+        computeSearchTarget();
+    }
+
+    public String getDefaultValue() {
+        return defaultValue != null ? defaultValue : "";
     }
 
     public boolean isEditable() {
@@ -312,6 +326,7 @@ public class SearchResult {
         private net.minecraft.world.item.Item item = null;
         private String description = "";
         private boolean editable = false;
+        private String defaultValue = null;
         private ResultEditHandler editHandler = null;
         private SearchIndexProvider provider = null;
 
@@ -328,6 +343,11 @@ public class SearchResult {
 
         public Builder value(String value) {
             this.value = value;
+            return this;
+        }
+
+        public Builder defaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
             return this;
         }
 
@@ -373,7 +393,7 @@ public class SearchResult {
         }
 
         public SearchResult build() {
-            return new SearchResult(type, id, title, path, value, modId, modName, icon, item, description, editable, editHandler, provider);
+            return new SearchResult(type, id, title, path, value, modId, modName, icon, item, description, editable, defaultValue, editHandler, provider);
         }
     }
 }

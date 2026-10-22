@@ -23,10 +23,12 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
     private static class MalilibConfigEntry {
         final Object config;
         final String modId;
+        final String defaultValueStr;
 
-        MalilibConfigEntry(Object config, String modId) {
+        MalilibConfigEntry(Object config, String modId, String defaultValueStr) {
             this.config = config;
             this.modId = modId;
+            this.defaultValueStr = defaultValueStr != null ? defaultValueStr : "";
         }
     }
 
@@ -304,12 +306,25 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
             String id = modId + ":config:" + name;
             String key = SearchResultType.SETTING.name() + ":" + id.toLowerCase(Locale.ROOT);
 
+            String defValStr = "";
+            try {
+                Method getDefM = config.getClass().getMethod("getDefaultAsString");
+                Object defObj = getDefM.invoke(config);
+                if (defObj != null) {
+                    defValStr = String.valueOf(defObj);
+                }
+            } catch (Throwable ignored) {}
+            if (defValStr.isEmpty()) {
+                defValStr = val;
+            }
+
             if (seenKeys.add(key)) {
-                malilibConfigs.put(id, new MalilibConfigEntry(config, modId));
+                malilibConfigs.put(id, new MalilibConfigEntry(config, modId, defValStr));
 
                 results.add(SearchResult.builder(SearchResultType.SETTING, id, title)
                         .path(path)
                         .value(val)
+                        .defaultValue(defValStr)
                         .modId(modId)
                         .modName(modName)
                         .description(resolvedDesc.isEmpty() ? (title + " (" + path + ")") : resolvedDesc)
@@ -380,7 +395,7 @@ public class MalilibConfigIndexProvider implements SearchIndexProvider {
                 result,
                 settingType,
                 java.util.List.of(),
-                currentVal,
+                entry.defaultValueStr,
                 newValStr -> setMalilibValue(entry, newValStr),
                 onValueChanged
         ));

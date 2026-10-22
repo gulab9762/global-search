@@ -75,11 +75,21 @@ public class SearchResultList extends ObjectSelectionList<SearchResultList.Resul
     }
 
     public void setResults(Collection<SearchResult> results) {
+        setResults(results, false);
+    }
+
+    public void setResults(Collection<SearchResult> results, boolean resetScroll) {
+        double prevScroll = this.scrollAmount();
         this.clearEntries();
         for (SearchResult result : results) {
             this.addEntry(new ResultEntry(this, result, this.minecraft.font, this.onSelected, this.onEdit, this.isListening));
         }
-        this.setScrollAmount(0);
+        if (resetScroll) {
+            this.setScrollAmount(0);
+        } else {
+            this.refreshScrollAmount();
+            this.setScrollAmount(prevScroll);
+        }
     }
 
     public static class ResultEntry extends ObjectSelectionList.Entry<ResultEntry> {

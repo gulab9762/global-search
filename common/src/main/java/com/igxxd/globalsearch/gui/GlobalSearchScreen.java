@@ -112,7 +112,7 @@ public class GlobalSearchScreen extends Screen {
         }
         this.searchBox.setResponder(text -> {
             savedSearchQuery = text;
-            updateFilter();
+            updateFilter(true);
         });
         this.addRenderableWidget(this.searchBox);
         this.setInitialFocus(this.searchBox);
@@ -214,21 +214,15 @@ public class GlobalSearchScreen extends Screen {
             return;
         }
 
-        boolean edited = com.igxxd.globalsearch.api.GlobalSearchApi.triggerEdit(result, this, newVal -> {
+        com.igxxd.globalsearch.api.GlobalSearchApi.triggerEdit(result, this, newVal -> {
+            result.setValue(newVal);
             this.copiedNotification = "Updated " + result.getTitle() + " to [" + newVal + "]";
             this.notificationExpiry = System.currentTimeMillis() + 3000;
+            updateFilter(false);
             if (this.resultList != null) {
                 this.resultList.refreshLayout();
             }
         });
-
-        if (edited && this.listeningKeybindResult == null) {
-            this.copiedNotification = "Updated " + result.getTitle() + " to [" + result.getValue() + "]";
-            this.notificationExpiry = System.currentTimeMillis() + 3000;
-            if (this.resultList != null) {
-                this.resultList.refreshLayout();
-            }
-        }
     }
 
     private Component getFilterButtonText(SearchResultType type) {
@@ -239,6 +233,10 @@ public class GlobalSearchScreen extends Screen {
     }
 
     private void updateFilter() {
+        updateFilter(false);
+    }
+
+    private void updateFilter(boolean resetScroll) {
         filteredResults.clear();
         String query = searchBox != null ? searchBox.getValue().trim().toLowerCase(Locale.ROOT) : savedSearchQuery.trim().toLowerCase(Locale.ROOT);
         String[] tokens = query.isEmpty() ? new String[0] : query.split("\\s+");
@@ -267,7 +265,7 @@ public class GlobalSearchScreen extends Screen {
         }
 
         if (resultList != null) {
-            resultList.setResults(filteredResults);
+            resultList.setResults(filteredResults, resetScroll);
         }
     }
 
@@ -350,7 +348,7 @@ public class GlobalSearchScreen extends Screen {
             if (this.categoryList != null) {
                 this.categoryList.rebuildEntries();
             }
-            updateFilter();
+            updateFilter(true);
         }
     }
 

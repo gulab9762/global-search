@@ -18,10 +18,12 @@ public class NeoForgeConfigIndexProvider implements SearchIndexProvider {
     private static class NeoForgeConfigEntry {
         final Object modConfig;
         final Object configValue;
+        final String defaultValueStr;
 
-        NeoForgeConfigEntry(Object modConfig, Object configValue) {
+        NeoForgeConfigEntry(Object modConfig, Object configValue, String defaultValueStr) {
             this.modConfig = modConfig;
             this.configValue = configValue;
+            this.defaultValueStr = defaultValueStr != null ? defaultValueStr : "";
         }
     }
 
@@ -100,11 +102,24 @@ public class NeoForgeConfigIndexProvider implements SearchIndexProvider {
                                                 desc = "NeoForge Config (" + pathKey + ")";
                                             }
 
-                                            configEntries.put(id, new NeoForgeConfigEntry(modCfg, configValue));
+                                            String defValStr = "";
+                                            try {
+                                                Method getDefM = configValue.getClass().getMethod("getDefault");
+                                                Object defObj = getDefM.invoke(configValue);
+                                                if (defObj != null) {
+                                                    defValStr = String.valueOf(defObj);
+                                                }
+                                            } catch (Throwable ignored) {}
+                                            if (defValStr.isEmpty()) {
+                                                defValStr = String.valueOf(val);
+                                            }
+
+                                            configEntries.put(id, new NeoForgeConfigEntry(modCfg, configValue, defValStr));
 
                                             results.add(SearchResult.builder(SearchResultType.SETTING, id, title)
                                                     .path(path)
                                                     .value(String.valueOf(val))
+                                                    .defaultValue(defValStr)
                                                     .modId(modId)
                                                     .modName(modName)
                                                     .description(desc)
@@ -156,7 +171,7 @@ public class NeoForgeConfigIndexProvider implements SearchIndexProvider {
                     result,
                     settingType,
                     List.of(),
-                    String.valueOf(currentVal),
+                    entry.defaultValueStr,
                     newValStr -> {
                         Object parsed = parseValue(currentVal != null ? currentVal.getClass() : String.class, newValStr);
                         return setNeoForgeValue(entry, parsed);

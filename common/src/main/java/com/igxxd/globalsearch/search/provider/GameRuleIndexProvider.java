@@ -59,6 +59,9 @@ public class GameRuleIndexProvider implements SearchIndexProvider {
                         String desc = "Game rule for current world: " + id + " (Category: " + categoryName + ", Default: " + rule.defaultValue() + ")";
 
                         final String initialVal = val;
+                        final String defValStr = String.valueOf(rule.defaultValue());
+
+                        SearchResult[] holder = new SearchResult[1];
                         SearchResult result = new SearchResult(
                                 SearchResultType.GAMERULE,
                                 id,
@@ -71,13 +74,14 @@ public class GameRuleIndexProvider implements SearchIndexProvider {
                                 null,
                                 desc,
                                 true,
+                                defValStr,
                                 (mc, screen, onValueChanged) -> {
                                     mc.gui.setScreen(new GlobalSettingEditScreen(
                                             screen,
-                                            new SearchResult(SearchResultType.GAMERULE, id, title, path, initialVal, "minecraft", "Minecraft World", ItemStack.EMPTY),
+                                            holder[0],
                                             settingType,
                                             List.of(),
-                                            initialVal,
+                                            defValStr,
                                             newVal -> {
                                                 if (mc.player != null && mc.player.connection != null) {
                                                     mc.player.connection.sendCommand("gamerule " + id + " " + newVal);
@@ -91,6 +95,7 @@ public class GameRuleIndexProvider implements SearchIndexProvider {
                                 },
                                 GameRuleIndexProvider.this
                         );
+                        holder[0] = result;
                         results.add(result);
                     }
                 } catch (Throwable ignored) {}

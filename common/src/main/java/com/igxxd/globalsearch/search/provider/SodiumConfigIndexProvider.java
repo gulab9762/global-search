@@ -33,13 +33,15 @@ public class SodiumConfigIndexProvider implements SearchIndexProvider {
         final Identifier id;
         final Class<?> enumClass;
         final List<String> choices;
+        final String defaultValueStr;
 
-        SodiumOptionEntry(Object configObj, Object optionObj, Identifier id, Class<?> enumClass, List<String> choices) {
+        SodiumOptionEntry(Object configObj, Object optionObj, Identifier id, Class<?> enumClass, List<String> choices, String defaultValueStr) {
             this.configObj = configObj;
             this.optionObj = optionObj;
             this.id = id;
             this.enumClass = enumClass;
             this.choices = choices;
+            this.defaultValueStr = defaultValueStr != null ? defaultValueStr : "";
         }
     }
 
@@ -194,28 +196,50 @@ public class SodiumConfigIndexProvider implements SearchIndexProvider {
                                         ? (modName + " > " + pageName)
                                         : (modName + " > " + pageName + " > " + groupName);
 
+                                String defValStr = "";
+                                try {
+                                    Method getDefaultValM = opt.getClass().getMethod("getDefaultValue");
+                                    Object depVal = getDefaultValM.invoke(opt);
+                                    if (depVal != null) {
+                                        for (Method m : depVal.getClass().getMethods()) {
+                                            if ("get".equals(m.getName()) && m.getParameterCount() == 1) {
+                                                Object defObj = m.invoke(depVal, configObj);
+                                                if (defObj != null) {
+                                                    if (defObj instanceof Enum<?> e) {
+                                                        defValStr = e.name();
+                                                    } else {
+                                                        defValStr = String.valueOf(defObj);
+                                                    }
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                } catch (Throwable ignored) {}
+
+                                if (defValStr.isEmpty()) {
+                                    defValStr = valStr;
+                                }
+
                                 String uniqueKey = SearchResultType.SETTING.name() + ":" + modId + ":" + optIdStr.toLowerCase(Locale.ROOT);
                                 if (seenKeys.add(uniqueKey)) {
                                     String desc = tooltip.isEmpty() ? (title + " in " + path) : tooltip;
                                     ItemStack icon = pickSodiumIcon(modId, pageName);
 
-                                    optionMap.put(optIdStr, new SodiumOptionEntry(configObj, opt, id, enumCls, choices));
+                                    optionMap.put(optIdStr, new SodiumOptionEntry(configObj, opt, id, enumCls, choices, defValStr));
 
-                                    results.add(new SearchResult(
-                                            SearchResultType.SETTING,
-                                            optIdStr,
-                                            title,
-                                            path,
-                                            valStr,
-                                            modId,
-                                            modName,
-                                            icon,
-                                            null,
-                                            desc,
-                                            true,
-                                            null,
-                                            SodiumConfigIndexProvider.this
-                                    ));
+                                    results.add(SearchResult.builder(SearchResultType.SETTING, optIdStr, title)
+                                            .path(path)
+                                            .value(valStr)
+                                            .defaultValue(defValStr)
+                                            .modId(modId)
+                                            .modName(modName)
+                                            .icon(icon)
+                                            .description(desc)
+                                            .editable(true)
+                                            .provider(SodiumConfigIndexProvider.this)
+                                            .build()
+                                    );
                                 }
                             } catch (Throwable ignored) {}
                         }
@@ -270,7 +294,7 @@ public class SodiumConfigIndexProvider implements SearchIndexProvider {
                 result,
                 type,
                 entry.choices,
-                currentVal,
+                entry.defaultValueStr,
                 newValStr -> setSodiumOptionValue(entry, newValStr),
                 onValueChanged
         ));
@@ -308,11 +332,18 @@ public class SodiumConfigIndexProvider implements SearchIndexProvider {
                     }
                 }
 
-                try {
-                    Method applyChangesM = entry.optionObj.getClass().getDeclaredMethod("applyChanges");
-                    applyChangesM.setAccessible(true);
-                    applyChangesM.invoke(entry.optionObj);
-                } catch (Throwable ignored) {}
+                // Traverse class hierarchy for applyChanges (declared in StatefulOption)
+                Class<?> optCls = entry.optionObj.getClass();
+                while (optCls != null && optCls != Object.class) {
+                    try {
+                        Method applyChangesM = optCls.getDeclaredMethod("applyChanges");
+                        applyChangesM.setAccessible(true);
+                        applyChangesM.invoke(entry.optionObj);
+                        break;
+                    } catch (NoSuchMethodException e) {
+                        optCls = optCls.getSuperclass();
+                    }
+                }
 
                 if (entry.configObj != null) {
                     if (entry.id != null) {
@@ -322,7 +353,12 @@ public class SodiumConfigIndexProvider implements SearchIndexProvider {
                         } catch (Throwable ignored) {}
                     }
                     try {
-                        Method flushM = entry.configObj.getClass().getMethod("flushStorageHandlers");
+                        Method applyAllM = entry.configObj.getClass().getMethod("applyAllOptions");
+                        applyAllM.invoke(entry.configObj);
+                    } catch (Throwable ignored) {}
+                    try {
+                        Method flushM = entry.configObj.getClass().getDeclaredMethod("flushStorageHandlers");
+                        flushM.setAccessible(true);
                         flushM.invoke(entry.configObj);
                     } catch (Throwable ignored) {}
                 }

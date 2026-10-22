@@ -84,11 +84,17 @@ public class GlobalSettingEditScreen extends Screen {
         this.parentScreen = parentScreen;
         this.result = result;
         this.choiceOptions = choiceOptions != null ? choiceOptions : List.of();
-        this.defaultValue = defaultValue;
+        if (defaultValue != null && !defaultValue.isEmpty()) {
+            this.defaultValue = defaultValue;
+        } else if (result != null && result.getDefaultValue() != null && !result.getDefaultValue().isEmpty()) {
+            this.defaultValue = result.getDefaultValue();
+        } else {
+            this.defaultValue = null;
+        }
         this.saveAction = saveAction;
         this.onValueChanged = onValueChanged;
 
-        String rawVal = result.getValue() != null ? result.getValue().trim() : "";
+        String rawVal = result != null && result.getValue() != null ? result.getValue().trim() : "";
 
         // Auto-detect setting type if not explicitly supplied or generic
         if (settingType != null) {
@@ -318,7 +324,7 @@ public class GlobalSettingEditScreen extends Screen {
 
         if (this.defaultValue != null && !this.defaultValue.isEmpty()) {
             int w3 = (cardW - 48 - 12) / 3;
-            ThemedButton applyBtn = new ThemedButton(cardX + 24, btnY, w3, actionBtnH, Component.literal("✓ Apply"), this::applyChanges)
+            ThemedButton applyBtn = new ThemedButton(cardX + 24, btnY, w3, actionBtnH, Component.literal("✓ Done"), this::onDoneClicked)
                     .setCentered(true).setHasDot(false).setActiveThemeHighlight(true);
             ThemedButton resetBtn = new ThemedButton(cardX + 24 + w3 + 6, btnY, w3, actionBtnH, Component.literal("↺ Default"), this::resetToDefault)
                     .setCentered(true).setHasDot(false);
@@ -330,7 +336,7 @@ public class GlobalSettingEditScreen extends Screen {
             this.addRenderableWidget(cancelBtn);
         } else {
             int w2 = (cardW - 48 - 8) / 2;
-            ThemedButton applyBtn = new ThemedButton(cardX + 24, btnY, w2, actionBtnH, Component.literal("✓ Apply"), this::applyChanges)
+            ThemedButton applyBtn = new ThemedButton(cardX + 24, btnY, w2, actionBtnH, Component.literal("✓ Done"), this::onDoneClicked)
                     .setCentered(true).setHasDot(false).setActiveThemeHighlight(true);
             ThemedButton cancelBtn = new ThemedButton(cardX + 24 + w2 + 8, btnY, w2, actionBtnH, Component.literal("✕ Cancel"), this::cancel)
                     .setCentered(true).setHasDot(false);
@@ -487,7 +493,11 @@ public class GlobalSettingEditScreen extends Screen {
         }
     }
 
-    private void applyChanges() {
+    private void onDoneClicked() {
+        applyChanges();
+    }
+
+    private boolean applyChanges() {
         String finalValue;
         if (settingType == SettingType.BOOLEAN) {
             finalValue = String.valueOf(this.currentBoolean);
@@ -511,7 +521,7 @@ public class GlobalSettingEditScreen extends Screen {
             }
         } else {
             cancel();
-            return;
+            return false;
         }
 
         try {
@@ -525,13 +535,16 @@ public class GlobalSettingEditScreen extends Screen {
                     this.onValueChanged.accept(finalValue);
                 }
                 cancel();
+                return true;
             } else {
                 this.statusMessage = "Could not apply value: " + finalValue;
                 this.statusError = true;
+                return false;
             }
         } catch (Throwable t) {
             this.statusMessage = "Error: " + t.getMessage();
             this.statusError = true;
+            return false;
         }
     }
 
@@ -548,7 +561,9 @@ public class GlobalSettingEditScreen extends Screen {
             return true;
         }
         if (event.key() == InputConstants.KEY_ESCAPE) {
-            cancel();
+            if (!applyChanges()) {
+                cancel();
+            }
             return true;
         }
         return super.keyPressed(event);

@@ -39,13 +39,15 @@ public class GenericConfigFileIndexProvider implements SearchIndexProvider {
         final String keyPath;   // e.g. "general.overworld_region_size" or "enabled.value"
         final String modId;
         final String modName;
+        final String defaultValue;
 
-        public FileConfigTarget(Path filePath, String fileType, String keyPath, String modId, String modName) {
+        public FileConfigTarget(Path filePath, String fileType, String keyPath, String modId, String modName, String defaultValue) {
             this.filePath = filePath;
             this.fileType = fileType;
             this.keyPath = keyPath;
             this.modId = modId;
             this.modName = modName;
+            this.defaultValue = defaultValue != null ? defaultValue : "";
         }
     }
 
@@ -281,12 +283,13 @@ public class GenericConfigFileIndexProvider implements SearchIndexProvider {
 
         String seenKey = SearchResultType.SETTING.name() + ":" + id.toLowerCase(Locale.ROOT);
         if (seenKeys.add(seenKey)) {
-            targetMap.put(id, new FileConfigTarget(file, fileType, keyPath, modId, modName));
+            targetMap.put(id, new FileConfigTarget(file, fileType, keyPath, modId, modName, value));
 
             String desc = "File Config (" + fileName + " > " + keyPath + ")";
             results.add(SearchResult.builder(SearchResultType.SETTING, id, title)
                     .path(path)
                     .value(value != null ? value : "")
+                    .defaultValue(value != null ? value : "")
                     .modId(modId)
                     .modName(modName)
                     .icon(new ItemStack(Items.WRITABLE_BOOK))
@@ -322,7 +325,7 @@ public class GenericConfigFileIndexProvider implements SearchIndexProvider {
                 result,
                 detectedType,
                 List.of(),
-                rawVal,
+                target.defaultValue,
                 newVal -> {
                     boolean success = updateConfigFile(target, newVal);
                     if (success) {

@@ -20,11 +20,13 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
         final Object holder;
         final Object configObj;
         final Field field;
+        final String defaultValueStr;
 
-        ClothFieldEntry(Object holder, Object configObj, Field field) {
+        ClothFieldEntry(Object holder, Object configObj, Field field, String defaultValueStr) {
             this.holder = holder;
             this.configObj = configObj;
             this.field = field;
+            this.defaultValueStr = defaultValueStr != null ? defaultValueStr : "";
         }
     }
 
@@ -95,11 +97,13 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
                                         desc = "Cloth Config setting for " + modName;
                                     }
 
-                                    clothEntries.put(id, new ClothFieldEntry(holder, configObj, cfgField));
+                                    String valStr = String.valueOf(val);
+                                    clothEntries.put(id, new ClothFieldEntry(holder, configObj, cfgField, valStr));
 
                                     SearchResult sr = SearchResult.builder(SearchResultType.SETTING, id, title)
                                             .path(path)
-                                            .value(String.valueOf(val))
+                                            .value(valStr)
+                                            .defaultValue(valStr)
                                             .modId(modId)
                                             .modName(modName)
                                             .description(desc)
@@ -173,7 +177,7 @@ public class ClothConfigIndexProvider implements SearchIndexProvider {
                     result,
                     settingType,
                     choiceOptions,
-                    String.valueOf(currentVal),
+                    entry.defaultValueStr,
                     newValStr -> {
                         try {
                             Object parsed = parseValue(type, newValStr);

@@ -172,6 +172,7 @@ public class XaeroConfigIndexProvider implements SearchIndexProvider {
                         SearchResult sr = SearchResult.builder(SearchResultType.SETTING, resultId, title)
                                 .path(fullPath)
                                 .value(currentValStr)
+                                .defaultValue(defValStr)
                                 .modId(modId)
                                 .modName(modName)
                                 .description(desc)
