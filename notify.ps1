@@ -1,7 +1,7 @@
 $exitCode = $LASTEXITCODE
 
 $message = if ($null -eq $exitCode -or $exitCode -eq 0) {
-    "Global Search: Added scrollable categories list with scrollbar, fixed structure syncing (vanilla BuiltinStructures + singleplayer server), live statistics real-time sync, and non-blocking multi-threaded async provider indexing!"
+    "Global Search: Fixed setting deduplication key in SearchIndexer so all 500+ settings are fully preserved when editing or rescanning, made Xaero config saving resilient, and updated JARs in Downloads and MultiMC!"
 } else {
     "Global Search: Build failed with exit code $exitCode"
 }
