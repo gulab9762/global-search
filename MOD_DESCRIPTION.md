@@ -47,7 +47,7 @@
 
 | Hotkey | Action |
 | :--- | :--- |
-| `[G]` *(Customizable)* | Open **Global Search** |
+| `[K]` *(Customizable)* | Open **Global Search** |
 | `[F6]` or `[Ctrl + T]` | Cycle Visual Theme (Obsidian Glass, Netherite RPG, etc.) |
 | `[Enter]` | Select, Edit, or Copy Highlighted Entry |
 | `[↑ / ↓]` | Navigate Results List |
@@ -62,7 +62,7 @@
    - **NeoForge**
 2. Download the latest `globalsearch-*.jar` for Minecraft **26.3**.
 3. Place the JAR file into your `.minecraft/mods` directory.
-4. Launch Minecraft and press `[G]` to search everything!
+4. Launch Minecraft and press `[K]` to search everything!
 
 ---
 
