@@ -280,6 +280,11 @@ public class SearchResult {
                     .append(Component.literal(value).withStyle(ChatFormatting.AQUA)));
         }
 
+        if (defaultValue != null && !defaultValue.isEmpty()) {
+            tooltip.add(Component.literal("Default: ").withStyle(ChatFormatting.DARK_GRAY)
+                    .append(Component.literal(defaultValue).withStyle(ChatFormatting.GRAY)));
+        }
+
         if (!path.isEmpty()) {
             tooltip.add(Component.literal("Path: ").withStyle(ChatFormatting.DARK_GRAY)
                     .append(Component.literal(path).withStyle(ChatFormatting.GRAY)));

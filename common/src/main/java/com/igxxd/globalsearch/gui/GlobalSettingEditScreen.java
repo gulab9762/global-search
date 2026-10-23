@@ -607,8 +607,15 @@ public class GlobalSettingEditScreen extends Screen {
         String displayTitle = font.plainSubstrByWidth(result.getTitle(), cardW - 24);
         graphics.text(font, displayTitle, cardX + 12, cardY + 34, theme.getTitleColor());
 
-        String displayPath = font.plainSubstrByWidth(result.getPath(), cardW - 24);
+        int maxPathW = (defaultValue != null && !defaultValue.isEmpty()) ? cardW - 140 : cardW - 24;
+        String displayPath = font.plainSubstrByWidth(result.getPath(), maxPathW);
         graphics.text(font, displayPath, cardX + 12, cardY + 47, theme.getMutedTextColor());
+
+        if (defaultValue != null && !defaultValue.isEmpty()) {
+            String defText = "Default: " + defaultValue;
+            int defW = font.width(defText);
+            graphics.text(font, defText, cardX + cardW - defW - 14, cardY + 47, 0xFFAAAAAA);
+        }
 
         // 6. Containers and helper text based on setting type
         int contentY = cardY + 74;

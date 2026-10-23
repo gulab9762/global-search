@@ -53,7 +53,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         settingEditors.clear();
 
         // 1. Core known options with dedicated modal popup dialogs
-        addSetting(results, seenKeys, "Field of View (FOV)", "Options > Video Settings", String.valueOf(options.fov().get()), "options.fov",
+        addSetting(results, seenKeys, "Field of View (FOV)", "Options > Video Settings", String.valueOf(options.fov().get()), "70", "options.fov",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "70", newVal -> {
                         int n = Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
@@ -64,7 +64,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Brightness", "Options > Video Settings", String.format(Locale.ROOT, "%.0f%%", options.gamma().get() * 100), "options.gamma",
+        addSetting(results, seenKeys, "Brightness", "Options > Video Settings", String.format(Locale.ROOT, "%.0f%%", options.gamma().get() * 100), "50%", "options.gamma",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.DOUBLE, null, "0.5", newVal -> {
                         double d = Double.parseDouble(newVal.replaceAll("[^0-9.]", ""));
@@ -76,7 +76,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Render Distance", "Options > Video Settings", options.getEffectiveRenderDistance() + " chunks", "options.renderDistance",
+        addSetting(results, seenKeys, "Render Distance", "Options > Video Settings", options.getEffectiveRenderDistance() + " chunks", "12 chunks", "options.renderDistance",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "12", newVal -> {
                         int n = Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
@@ -87,7 +87,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Simulation Distance", "Options > Video Settings", options.simulationDistance().get() + " chunks", "options.simulationDistance",
+        addSetting(results, seenKeys, "Simulation Distance", "Options > Video Settings", options.simulationDistance().get() + " chunks", "10 chunks", "options.simulationDistance",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "10", newVal -> {
                         int n = Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
@@ -98,7 +98,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "GUI Scale", "Options > Video Settings", options.guiScale().get() == 0 ? "Auto" : String.valueOf(options.guiScale().get()), "options.guiScale",
+        addSetting(results, seenKeys, "GUI Scale", "Options > Video Settings", options.guiScale().get() == 0 ? "Auto" : String.valueOf(options.guiScale().get()), "Auto", "options.guiScale",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.CHOICE, List.of("Auto", "1", "2", "3", "4"), "Auto", newVal -> {
                         int s = newVal.equalsIgnoreCase("Auto") ? 0 : Integer.parseInt(newVal.trim());
@@ -109,7 +109,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Max Framerate", "Options > Video Settings", options.framerateLimit().get() >= 260 ? "Unlimited" : options.framerateLimit().get() + " fps", "options.framerateLimit",
+        addSetting(results, seenKeys, "Max Framerate", "Options > Video Settings", options.framerateLimit().get() >= 260 ? "Unlimited" : options.framerateLimit().get() + " fps", "120 fps", "options.framerateLimit",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.INTEGER, null, "120", newVal -> {
                         int fps = newVal.equalsIgnoreCase("Unlimited") ? 260 : Integer.parseInt(newVal.replaceAll("[^0-9]", ""));
@@ -120,7 +120,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "VSync", "Options > Video Settings", options.enableVsync().get() ? "ON" : "OFF", "options.enableVsync",
+        addSetting(results, seenKeys, "VSync", "Options > Video Settings", options.enableVsync().get() ? "ON" : "OFF", "OFF", "options.enableVsync",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
                         boolean b = Boolean.parseBoolean(newVal);
@@ -131,7 +131,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Fullscreen", "Options > Video Settings", options.fullscreen().get() ? "ON" : "OFF", "options.fullscreen",
+        addSetting(results, seenKeys, "Fullscreen", "Options > Video Settings", options.fullscreen().get() ? "ON" : "OFF", "OFF", "options.fullscreen",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
                         boolean b = Boolean.parseBoolean(newVal);
@@ -142,7 +142,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "View Bobbing", "Options > Video Settings", options.bobView().get() ? "ON" : "OFF", "options.bobView",
+        addSetting(results, seenKeys, "View Bobbing", "Options > Video Settings", options.bobView().get() ? "ON" : "OFF", "ON", "options.bobView",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "true", newVal -> {
                         boolean b = Boolean.parseBoolean(newVal);
@@ -153,7 +153,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Auto-Jump", "Options > Controls", options.autoJump().get() ? "ON" : "OFF", "options.autoJump",
+        addSetting(results, seenKeys, "Auto-Jump", "Options > Controls", options.autoJump().get() ? "ON" : "OFF", "OFF", "options.autoJump",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
                         boolean b = Boolean.parseBoolean(newVal);
@@ -164,7 +164,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Mouse Sensitivity", "Options > Controls > Mouse Settings", String.format(Locale.ROOT, "%.0f%%", options.sensitivity().get() * 100), "options.sensitivity",
+        addSetting(results, seenKeys, "Mouse Sensitivity", "Options > Controls > Mouse Settings", String.format(Locale.ROOT, "%.0f%%", options.sensitivity().get() * 100), "50%", "options.sensitivity",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.DOUBLE, null, "0.5", newVal -> {
                         double d = Double.parseDouble(newVal.replaceAll("[^0-9.]", ""));
@@ -176,7 +176,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Invert Mouse", "Options > Controls > Mouse Settings", options.invertMouseY().get() ? "ON" : "OFF", "options.invertMouse",
+        addSetting(results, seenKeys, "Invert Mouse", "Options > Controls > Mouse Settings", options.invertMouseY().get() ? "ON" : "OFF", "OFF", "options.invertMouse",
                 (mc, opts, res, scr, cb) -> {
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.BOOLEAN, null, "false", newVal -> {
                         boolean b = Boolean.parseBoolean(newVal);
@@ -187,7 +187,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                     return null;
                 });
 
-        addSetting(results, seenKeys, "Particles", "Options > Video Settings", String.valueOf(options.particles().get()), "options.particles",
+        addSetting(results, seenKeys, "Particles", "Options > Video Settings", String.valueOf(options.particles().get()), "ALL", "options.particles",
                 (mc, opts, res, scr, cb) -> {
                     List<String> partChoices = List.of("ALL", "DECREASED", "MINIMAL");
                     openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.CHOICE, partChoices, "ALL", newVal -> {
@@ -202,7 +202,7 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         for (SoundSource source : SoundSource.values()) {
             String name = ProviderUtils.formatCamelCase(source.getName()) + " Volume";
             String value = String.format(Locale.ROOT, "%.0f%%", options.getSoundSourceVolume(source) * 100);
-            addSetting(results, seenKeys, name, "Options > Music & Sounds", value, "soundCategory." + source.getName(),
+            addSetting(results, seenKeys, name, "Options > Music & Sounds", value, "100%", "soundCategory." + source.getName(),
                     (mc, opts, res, scr, cb) -> {
                         openModal(mc, scr, res, GlobalSettingEditScreen.SettingType.DOUBLE, null, "1.0", newVal -> {
                             double d = Double.parseDouble(newVal.replaceAll("[^0-9.]", ""));
@@ -333,7 +333,13 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
         return "Options > Miscellaneous";
     }
 
+    private static final Map<String, String> INITIAL_DEFAULTS = new java.util.concurrent.ConcurrentHashMap<>();
+
     private void addSetting(List<SearchResult> results, Set<String> seenKeys, String title, String path, String value, String transKey, SettingEditor editor) {
+        addSetting(results, seenKeys, title, path, value, null, transKey, editor);
+    }
+
+    private void addSetting(List<SearchResult> results, Set<String> seenKeys, String title, String path, String value, String explicitDefault, String transKey, SettingEditor editor) {
         String id = "setting:" + title.toLowerCase(Locale.ROOT).replace(' ', '_');
         String key = SearchResultType.SETTING.name() + ":" + id;
         if (seenKeys.add(key)) {
@@ -359,10 +365,15 @@ public class VanillaSettingIndexProvider implements SearchIndexProvider {
                 desc = "Vanilla Setting (" + path + ")";
             }
 
+            // Keep pristine default value from launch or explicit canonical default
+            String def = explicitDefault != null && !explicitDefault.isEmpty()
+                    ? explicitDefault
+                    : INITIAL_DEFAULTS.computeIfAbsent(id, k -> value);
+
             SearchResult.Builder builder = SearchResult.builder(SearchResultType.SETTING, id, title)
                     .path(path)
                     .value(value)
-                    .defaultValue(value)
+                    .defaultValue(def)
                     .modId("minecraft")
                     .modName("Minecraft")
                     .description(desc)
